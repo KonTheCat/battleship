@@ -1,0 +1,8 @@
+body {
+    margin: 0;
+    padding: 0;
+}
+
+#player_board, #computer_board {
+    margin: 100px;
+}
