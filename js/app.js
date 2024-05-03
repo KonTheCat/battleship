@@ -6,11 +6,13 @@ class Game {
         this.state = 'playing'
         this.playerBoard = {
             parent: document.getElementById('player_board'),
-            cells: {}
+            cells: {},
+            ships: {}
         }
         this.computerBoard = {
             parent: document.getElementById('computer_board'),
-            cells: {}
+            cells: {},
+            ships: {}
         }
     }
     initBoard(whichBoard) {
@@ -29,6 +31,23 @@ class Game {
                     this.renderBoardCells(whichBoard)
                 }
             }  
+        }
+    }
+    initShips(whichBoard){
+        console.log(`running initShips`)
+        const ships = {
+            destroyer: {size: 2, grids: [], status: 'init'},
+            submarine: {size: 3, grids: [], status: 'init'},
+            cruiser: {size: 3, grids: [], status: 'init'},
+            battleship: {size: 4, grids: [], status: 'init'},
+            carrier: {size: 5, grids: [], status: 'init'},
+        }
+        for (let ship in ships) {
+            let initedShip = ships[ship]
+            for (let i = 0; i < initedShip.size; i++) {
+                initedShip.grids[i] = {id: -1, status: 'init'}
+            } 
+            this[whichBoard].ships[ship] = initedShip
         }
     }
     renderBoardCells(whichBoard) {
@@ -90,22 +109,56 @@ class Game {
         })
         parent.appendChild(newButton)
     }
-    addShip(whichBoard, startingCellID, size, downOrRight){
+    addShip(whichBoard, startingCellID, type, downOrRight){
+        const size = this[whichBoard].ships[type].size
+        if (this.validateAddShip(whichBoard, startingCellID, size, downOrRight)) {
+            let currentCellID = startingCellID
+            let shipObjectCellIterator = 0
+            for (let i = 0; i < size; i++) {
+                this[whichBoard].cells[currentCellID].contains = 'ship'
+                this[whichBoard].ships[type].grids[shipObjectCellIterator].id = currentCellID
+                this[whichBoard].ships[type].grids[shipObjectCellIterator].status = 'placed'
+                shipObjectCellIterator ++
+                if (downOrRight === 'down') {
+                    currentCellID += 10
+                } else if (downOrRight === 'right') {
+                    currentCellID += 1
+                }
+            }
+            this[whichBoard].ships[type].status = 'placed'
+        } else {
+            console.log(`Adding ship failed.`)
+        }
+    }
+    validateAddShip(whichBoard, startingCellID, size, downOrRight) {
         let currentCellID = startingCellID
         for (let i = 0; i < size; i++) {
-            this[whichBoard].cells[currentCellID].contains = 'ship'
-            if (downOrRight === 'down') {
-                currentCellID += 10
-            } else if (downOrRight === 'right') {
-                currentCellID += 1
+            if (this.validateCellForShipPlacement(whichBoard, currentCellID)) {
+                if (downOrRight === 'down') {
+                    currentCellID += 10
+                } else if (downOrRight === 'right') {
+                    currentCellID += 1
+                }
+            } else {
+                throw new Error(`Illegal ship placement, a cell is occupied. The placement attempt was for board ${whichBoard}, starting cell ${startingCellID}, size ${size}, downOrRight ${downOrRight}, and the erroring cell was ${currentCellID}.`)
+                return false
             }
+        }
+        return true
+    }
+    validateCellForShipPlacement(whichBoard, cellID) {
+        if (this[whichBoard].cells[cellID].contains == 'water') {
+            return true
+        } else {
+            return false
         }
     }
 }
 
-const game = new Game(10, 40)
-game.renderControlButtons()
-game.initBoard('playerBoard')
-game.renderBoardCells('playerBoard')
-game.addShip('playerBoard', 0, 3, 'down')
-game.addShip('playerBoard', 1, 3, 'right')
+const g = new Game(10, 40)
+g.renderControlButtons()
+g.initBoard('playerBoard')
+g.initShips('playerBoard')
+g.renderBoardCells('playerBoard')
+g.addShip('playerBoard', 0, 'destroyer', 'down')
+g.addShip('playerBoard', 1, 'submarine', 'right')
