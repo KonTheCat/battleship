@@ -33,7 +33,7 @@ class Game {
     }
     renderBoardCells(whichBoard) {
         this[whichBoard].parent.innerHTML = ''
-        this[whichBoard].parent.style.width = `${(Math.sqrt(Object.keys(this[whichBoard].cells).length) * (this.cellSize + 2))}px`
+        this[whichBoard].parent.style.width = `${this.boardSideSize * (this.cellSize + 2)}px`
         this[whichBoard].parent.style.display = "flex"
         this[whichBoard].parent.style.flexWrap = "wrap"
         for (let cell in this[whichBoard].cells) {
@@ -47,7 +47,7 @@ class Game {
                 cell.style.backgroundColor = 'black'
                 break;
             case 'water':
-                cell.style.backgroundColor = 'blue'
+                cell.style.backgroundColor = '#4d5df0'
             default:
                 break;
         }
@@ -68,7 +68,6 @@ class Game {
             default:
                 break;
         }
-
         parent.append(cell)
     }
     renderControlButtons(){
