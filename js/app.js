@@ -226,6 +226,7 @@ class Game {
     updateAndRender() {
         this.updateShipsStatus('playerBoard')
         this.updateShipsStatus('computerBoard')
+        this.checkVictory()
         this.renderBoard('playerBoard')
         this.renderBoard('computerBoard')
     }
@@ -258,6 +259,21 @@ class Game {
             }
         }
         return getRandomElementFromArray(arrayOfAttackableCells)
+    }
+    checkVictory() {
+        if (this.checkIfAllShipsSunk('playerBoard')) {
+            console.log(`all player ships sunk, computer wins`)
+        }
+        if (this.checkIfAllShipsSunk('computerBoard')) {
+            console.log(`all computer ships sunk, player wins`)
+        }
+    }
+    checkIfAllShipsSunk(whichBoard) {
+        let allShipsSunk = false
+        for (let ship in this[whichBoard].ships) {
+            allShipsSunk = this[whichBoard].ships[ship].isSunk
+        }
+        return allShipsSunk
     }
 }
 
