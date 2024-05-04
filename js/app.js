@@ -235,7 +235,7 @@ class Game {
         this.computerAttackCell()
         this.isComputerTurn = false
     }
-    computerAttackCell(previousHitID) { //add a target ship direction here, or something
+    computerAttackCell(previousHitID) { //add a target ship direction here, or something. make a property to hold this data in the class
         const idOfCellToAttack = this.getCellToAttack('playerBoard', previousHitID)
         console.log(`Computer attacking cell ${idOfCellToAttack}`)
         if (this['playerBoard'].cells[idOfCellToAttack].isShip) {
@@ -264,12 +264,11 @@ class Game {
         let arrayOfAttackableCells = []
         if (previousHitID){
             console.log(`computer player hunting narrowly for reasonable targets around ${previousHitID}`)
-            const searchPatternAlpha = [-11, -10, -9, -1, 1, 9, 10, 11]
+            const searchPatternAlpha = [ -10, -1, 1, 10]
             searchPatternAlpha.forEach(element => {
                 const idToTest = Number(previousHitID) + Number(element)
                 if (idToTest > 0 && idToTest < 100) {
-                    const notAlreadyHit = !(this[whichBoard].cells[idToTest].isHit)
-                    if (notAlreadyHit){
+                    if (!this[whichBoard].cells[idToTest].isHit){
                         arrayOfAttackableCells.push(idToTest)
                     }
                 }
@@ -294,11 +293,13 @@ class Game {
         }
     }
     checkIfAllShipsSunk(whichBoard) {
-        let allShipsSunk = false
+        let sunkShipCounter = 0
         for (let ship in this[whichBoard].ships) {
-            allShipsSunk = this[whichBoard].ships[ship].isSunk
+            if (this[whichBoard].ships[ship].isSunk) {
+                sunkShipCounter ++
+            }
         }
-        return allShipsSunk
+        return sunkShipCounter === 5
     }
 }
 
@@ -324,6 +325,7 @@ g.addShip('computerBoard', 45, 'battleship', 'down')
 // End of Main Game Controller
 
 function getRandomElementFromArray(array) {
+    console.log(`picking from the following options ${array}`)
     const randomIndex = Math.floor(Math.random() * array.length)
     return array[randomIndex]
 }
