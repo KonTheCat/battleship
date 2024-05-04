@@ -235,28 +235,53 @@ class Game {
         this.computerAttackCell()
         this.isComputerTurn = false
     }
-    computerAttackCell() {
-        const idOfCellToAttack = this.getCellToAttack('playerBoard')
+    computerAttackCell(previousHitID) { //add a target ship direction here, or something
+        const idOfCellToAttack = this.getCellToAttack('playerBoard', previousHitID)
         console.log(`Computer attacking cell ${idOfCellToAttack}`)
         if (this['playerBoard'].cells[idOfCellToAttack].isShip) {
             console.log(`computer hit ship at cell ${idOfCellToAttack}, computer goes again`)
             this['playerBoard'].cells[idOfCellToAttack].isHit = true
             const hitShipKey = Object.keys(this['playerBoard'].cells[idOfCellToAttack].contains)
             this['playerBoard'].ships[hitShipKey].cells[this['playerBoard'].cells[idOfCellToAttack].id].isHit = true
+            this.computerAttackCell(idOfCellToAttack)
             this.updateAndRender()
-            this.computerAttackCell()
         }
         if (this['playerBoard'].cells[idOfCellToAttack].isWater) {
             this['playerBoard'].cells[idOfCellToAttack].isHit = true
             console.log('computer hit water')
         }
     }
-    getCellToAttack(whichBoard) {
+    getAttackableCellsRandomly(whichBoard) {
         const arrayOfAttackableCells = []
         for (let cell in this[whichBoard].cells) {
             if(this[whichBoard].cells[cell].isHit === false) {
                 arrayOfAttackableCells.push(cell)
             }
+        }
+        return arrayOfAttackableCells
+    }
+    getCellToAttack(whichBoard, previousHitID) {
+        let arrayOfAttackableCells = []
+        if (previousHitID){
+            console.log(`computer player hunting narrowly for reasonable targets around ${previousHitID}`)
+            const searchPatternAlpha = [-11, -10, -9, -1, 1, 9, 10, 11]
+            searchPatternAlpha.forEach(element => {
+                const idToTest = Number(previousHitID) + Number(element)
+                if (idToTest > 0 && idToTest < 100) {
+                    const notAlreadyHit = !(this[whichBoard].cells[idToTest].isHit)
+                    if (notAlreadyHit){
+                        arrayOfAttackableCells.push(idToTest)
+                    }
+                }
+                if (arrayOfAttackableCells.length === 0) {
+                    console.log(`there are no squares that its reasonable to attack around ${previousHitID}, returning to the broad profile`)
+                    arrayOfAttackableCells = this.getAttackableCellsRandomly('playerBoard')
+                }
+            })
+        } else {
+            arrayOfAttackableCells = this.getAttackableCellsRandomly('playerBoard')
+            console.log(`computer is hunting randomly, taking into account all previous hits`)
+
         }
         return getRandomElementFromArray(arrayOfAttackableCells)
     }
