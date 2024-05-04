@@ -4,6 +4,7 @@ class Game {
         this.cellSize = cellSize
         this.mode = 'inspect'
         this.state = 'playing'
+        this.isComputerTurn = false
         this.playerBoard = {
             parent: document.getElementById('player_board'),
             cells: {},
@@ -33,7 +34,7 @@ class Game {
                 reveal: () => {
                     console.log(`revealing cell with id ${this[whichBoard].cells[i].id}`)
                     this[whichBoard].cells[i].isHidden = false
-                    this.updateAndRender(whichBoard)
+                    this.updateAndRender()
                 },
                 attack: () => {
                     console.log(`attacking cell with id ${this[whichBoard].cells[i].id}`)
@@ -46,11 +47,14 @@ class Game {
                             console.log(this[whichBoard].ships[hitShipKey])
                         } else if (this[whichBoard].cells[i].isWater) {
                             console.log(`You have hit a water`)
+                            this.isComputerTurn = true
+                            this.runComputerTurn()
                         }
+                        this[whichBoard].cells[i].isHidden = false
                     } else {
                         console.log(`cell was already attacked`)
                     }
-                    this.updateAndRender(whichBoard)
+                    this.updateAndRender()
                 }
             }  
         }
@@ -121,6 +125,10 @@ class Game {
         if (this[whichBoard].cells[id].isSunk) {
             cell.innerHTML = 'S'
         }
+        if (this[whichBoard].cells[id].isHit && this[whichBoard].cells[id].isWater){
+            cell.innerHTML = 'M'
+            cell.style.color = 'black'
+        }
         cell.style.height = `${this.cellSize}px`
         cell.style.width = `${this.cellSize}px`
         cell.style.border = style
@@ -147,7 +155,7 @@ class Game {
         newButton.addEventListener('click', () => {
             this.mode = 'reveal'
             console.log(`Game mode set to ${this.mode}`)
-            this.renderBoard('playerBoard')
+            this.updateAndRender()
         })
         parent.appendChild(newButton)
 
@@ -156,7 +164,7 @@ class Game {
         newButton.addEventListener('click', () => {
             this.mode = 'inspect'
             console.log(`Game mode set to ${this.mode}`)
-            this.renderBoard('playerBoard')
+            this.updateAndRender()
         })
         parent.appendChild(newButton)
 
@@ -165,7 +173,7 @@ class Game {
         newButton.addEventListener('click', () => {
             this.mode = 'attack'
             console.log(`Game mode set to ${this.mode}`)
-            this.renderBoard('playerBoard')
+            this.updateAndRender()
         })
         parent.appendChild(newButton)
     }
@@ -187,7 +195,7 @@ class Game {
                 }
             }
             this[whichBoard].ships[type].isPlaced = true
-            this.updateAndRender(whichBoard)
+            this.updateAndRender()
         } else {
             console.log(`Adding ship failed.`)
         }
@@ -215,18 +223,66 @@ class Game {
             return false
         }
     }
-    updateAndRender(whichBoard) {
-        this.updateShipsStatus(whichBoard)
-        this.renderBoard(whichBoard)
+    updateAndRender() {
+        this.updateShipsStatus('playerBoard')
+        this.updateShipsStatus('computerBoard')
+        this.renderBoard('playerBoard')
+        this.renderBoard('computerBoard')
+    }
+    runComputerTurn() {
+        console.log(`Computer taking a turn.`)
+        this.computerAttackCell()
+        this.isComputerTurn = false
+    }
+    computerAttackCell() {
+        const idOfCellToAttack = this.getCellToAttack('playerBoard')
+        console.log(`Computer attacking cell ${idOfCellToAttack}`)
+        if (this['playerBoard'].cells[idOfCellToAttack].isShip) {
+            console.log(`computer hit ship at cell ${idOfCellToAttack}, computer goes again`)
+            this['playerBoard'].cells[idOfCellToAttack].isHit = true
+            const hitShipKey = Object.keys(this['playerBoard'].cells[idOfCellToAttack].contains)
+            this['playerBoard'].ships[hitShipKey].cells[this['playerBoard'].cells[idOfCellToAttack].id].isHit = true
+            this.updateAndRender()
+            this.computerAttackCell()
+        }
+        if (this['playerBoard'].cells[idOfCellToAttack].isWater) {
+            this['playerBoard'].cells[idOfCellToAttack].isHit = true
+            console.log('computer hit water')
+        }
+    }
+    getCellToAttack(whichBoard) {
+        const arrayOfAttackableCells = []
+        for (let cell in this[whichBoard].cells) {
+            if(this[whichBoard].cells[cell].isHit === false) {
+                arrayOfAttackableCells.push(cell)
+            }
+        }
+        return getRandomElementFromArray(arrayOfAttackableCells)
     }
 }
 
+// Main Game Controller
 const g = new Game(10, 40)
 g.renderControlButtons()
 g.initBoard('playerBoard', false)
 g.initShips('playerBoard')
+g.initBoard('computerBoard', true)
+g.initShips('computerBoard')
 g.addShip('playerBoard', 20, 'destroyer', 'down')
 g.addShip('playerBoard', 1, 'submarine', 'right')
 g.addShip('playerBoard', 8, 'cruiser', 'down')
 g.addShip('playerBoard', 91, 'carrier', 'right')
-g.addShip('playerBoard', 49, 'battleship', 'down')
+g.addShip('playerBoard', 45, 'battleship', 'down')
+g.addShip('computerBoard', 20, 'destroyer', 'down')
+g.addShip('computerBoard', 1, 'submarine', 'right')
+g.addShip('computerBoard', 8, 'cruiser', 'down')
+g.addShip('computerBoard', 91, 'carrier', 'right')
+g.addShip('computerBoard', 45, 'battleship', 'down')
+
+
+// End of Main Game Controller
+
+function getRandomElementFromArray(array) {
+    const randomIndex = Math.floor(Math.random() * array.length)
+    return array[randomIndex]
+}
