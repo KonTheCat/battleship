@@ -15,20 +15,42 @@ class Game {
             ships: {}
         }
     }
-    initBoard(whichBoard) {
+    initBoard(whichBoard, initIsHidden) {
         console.log(`running initBoard`)
         for (let i = 0; i < this.boardSideSize * this.boardSideSize; i++) {
             this[whichBoard].cells[i] = {
                 id: i,
-                contains: 'water',
-                isHidden: true,
+                contains: {},
+                isHit: false,
+                isSunk: false,
+                isHidden: initIsHidden,
+                isWater: true,
+                isShip: false,
                 identify: () => {
-                    console.log(`I am cell ${this[whichBoard].cells[i].id}, I contain ${this[whichBoard].cells[i].contains}, and my isHidden is ${this[whichBoard].cells[i].isHidden}`)
+                    console.log(`I am cell ${this[whichBoard].cells[i].id}, my details are below.`)
+                    console.log(this[whichBoard].cells[i])
                 },
                 reveal: () => {
-                    console.log(`revealing`)
+                    console.log(`revealing cell with id ${this[whichBoard].cells[i].id}`)
                     this[whichBoard].cells[i].isHidden = false
-                    this.renderBoardCells(whichBoard)
+                    this.updateAndRender(whichBoard)
+                },
+                attack: () => {
+                    console.log(`attacking cell with id ${this[whichBoard].cells[i].id}`)
+                    if (! this[whichBoard].cells[i].isHit) {
+                        this[whichBoard].cells[i].isHit = true
+                        if (this[whichBoard].cells[i].isShip){
+                            const hitShipKey = Object.keys(this[whichBoard].cells[i].contains)
+                            this[whichBoard].ships[hitShipKey].cells[this[whichBoard].cells[i].id].isHit = true
+                            console.log(`You have hit a ship, it is a ${hitShipKey}. The status of this ship is returned below`)
+                            console.log(this[whichBoard].ships[hitShipKey])
+                        } else if (this[whichBoard].cells[i].isWater) {
+                            console.log(`You have hit a water`)
+                        }
+                    } else {
+                        console.log(`cell was already attacked`)
+                    }
+                    this.updateAndRender(whichBoard)
                 }
             }  
         }
@@ -36,21 +58,40 @@ class Game {
     initShips(whichBoard){
         console.log(`running initShips`)
         const ships = {
-            destroyer: {size: 2, grids: [], status: 'init'},
-            submarine: {size: 3, grids: [], status: 'init'},
-            cruiser: {size: 3, grids: [], status: 'init'},
-            battleship: {size: 4, grids: [], status: 'init'},
-            carrier: {size: 5, grids: [], status: 'init'},
+            destroyer: {size: 2, cells: {}, isSunk: false, isPlaced: false},
+            submarine: {size: 3, cells: {}, isSunk: false, isPlaced: false},
+            cruiser: {size: 3, cells: {}, isSunk: false, isPlaced: false},
+            battleship: {size: 4, cells: {}, isSunk: false, isPlaced: false},
+            carrier: {size: 5, cells: {}, isSunk: false, isPlaced: false},
         }
         for (let ship in ships) {
             let initedShip = ships[ship]
-            for (let i = 0; i < initedShip.size; i++) {
-                initedShip.grids[i] = {id: -1, status: 'init'}
-            } 
             this[whichBoard].ships[ship] = initedShip
         }
     }
-    renderBoardCells(whichBoard) {
+    updateShipsStatus(whichBoard) {
+        for (let ship in this[whichBoard].ships) {
+            this.updateShipStatus(whichBoard, ship)
+        }
+    }
+    updateShipStatus(whichBoard, ship) {
+        if (this[whichBoard].ships[ship].isPlaced && !this[whichBoard].ships[ship].isSunk) {
+            let intactCellsInShip = 0
+            for (let cell in this[whichBoard].ships[ship].cells){
+                if (! this[whichBoard].ships[ship].cells[cell].isHit) {
+                    intactCellsInShip += 1
+                } 
+            }
+            if (intactCellsInShip === 0) {
+                console.log(`The ${ship} on ${whichBoard} is sunk`)
+                this[whichBoard].ships[ship].isSunk = true
+                for (let cell in this[whichBoard].ships[ship].cells) {
+                    this[whichBoard].cells[cell].isSunk = true
+                }
+            }
+        }
+    }
+    renderBoard(whichBoard) {
         this[whichBoard].parent.innerHTML = ''
         this[whichBoard].parent.style.width = `${this.boardSideSize * (this.cellSize + 2)}px`
         this[whichBoard].parent.style.display = "flex"
@@ -61,17 +102,24 @@ class Game {
     }
     renderBoardCell(whichBoard, parent, id, style = "1px solid black") {
         const cell = document.createElement("div")
-        switch (this[whichBoard].cells[id].contains) {
-            case 'ship':
-                cell.style.backgroundColor = 'black'
-                break;
-            case 'water':
-                cell.style.backgroundColor = '#4d5df0'
-            default:
-                break;
+        if (this[whichBoard].cells[id].isShip) {
+            cell.style.backgroundColor = 'black'
+        }
+        if (this[whichBoard].cells[id].isWater) {
+            cell.style.backgroundColor = '#4d5df0'
         }
         if (this[whichBoard].cells[id].isHidden) {
             cell.style.backgroundColor = 'white'
+        } 
+        if (this[whichBoard].cells[id].isHit) {
+            cell.innerHTML = 'H'
+            cell.style.color = 'red'
+            cell.style.fontWeight = 'bolder'
+            cell.style.alignContent = 'center'
+            cell.style.fontSize = `${this.cellSize * .75}px`
+        }
+        if (this[whichBoard].cells[id].isSunk) {
+            cell.innerHTML = 'S'
         }
         cell.style.height = `${this.cellSize}px`
         cell.style.width = `${this.cellSize}px`
@@ -83,6 +131,9 @@ class Game {
                 break
             case 'reveal':
                 cell.addEventListener("click", this[whichBoard].cells[id].reveal)
+                break
+            case 'attack':
+                cell.addEventListener("click", this[whichBoard].cells[id].attack)
                 break
             default:
                 break;
@@ -96,7 +147,7 @@ class Game {
         newButton.addEventListener('click', () => {
             this.mode = 'reveal'
             console.log(`Game mode set to ${this.mode}`)
-            this.renderBoardCells('playerBoard')
+            this.renderBoard('playerBoard')
         })
         parent.appendChild(newButton)
 
@@ -105,7 +156,16 @@ class Game {
         newButton.addEventListener('click', () => {
             this.mode = 'inspect'
             console.log(`Game mode set to ${this.mode}`)
-            this.renderBoardCells('playerBoard')
+            this.renderBoard('playerBoard')
+        })
+        parent.appendChild(newButton)
+
+        newButton = document.createElement('button')
+        newButton.innerHTML = `<h4>Attack</h4>`
+        newButton.addEventListener('click', () => {
+            this.mode = 'attack'
+            console.log(`Game mode set to ${this.mode}`)
+            this.renderBoard('playerBoard')
         })
         parent.appendChild(newButton)
     }
@@ -115,9 +175,10 @@ class Game {
             let currentCellID = startingCellID
             let shipObjectCellIterator = 0
             for (let i = 0; i < size; i++) {
-                this[whichBoard].cells[currentCellID].contains = 'ship'
-                this[whichBoard].ships[type].grids[shipObjectCellIterator].id = currentCellID
-                this[whichBoard].ships[type].grids[shipObjectCellIterator].status = 'placed'
+                this[whichBoard].cells[currentCellID].isShip = true
+                this[whichBoard].cells[currentCellID].isWater = false
+                this[whichBoard].cells[currentCellID].contains[type] = this[whichBoard].ships[type]
+                this[whichBoard].ships[type].cells[currentCellID] = {id: currentCellID, isHit: false}
                 shipObjectCellIterator ++
                 if (downOrRight === 'down') {
                     currentCellID += 10
@@ -125,7 +186,8 @@ class Game {
                     currentCellID += 1
                 }
             }
-            this[whichBoard].ships[type].status = 'placed'
+            this[whichBoard].ships[type].isPlaced = true
+            this.updateAndRender(whichBoard)
         } else {
             console.log(`Adding ship failed.`)
         }
@@ -147,18 +209,24 @@ class Game {
         return true
     }
     validateCellForShipPlacement(whichBoard, cellID) {
-        if (this[whichBoard].cells[cellID].contains == 'water') {
+        if (this[whichBoard].cells[cellID].isWater) {
             return true
         } else {
             return false
         }
     }
+    updateAndRender(whichBoard) {
+        this.updateShipsStatus(whichBoard)
+        this.renderBoard(whichBoard)
+    }
 }
 
 const g = new Game(10, 40)
 g.renderControlButtons()
-g.initBoard('playerBoard')
+g.initBoard('playerBoard', false)
 g.initShips('playerBoard')
-g.renderBoardCells('playerBoard')
-g.addShip('playerBoard', 0, 'destroyer', 'down')
+g.addShip('playerBoard', 20, 'destroyer', 'down')
 g.addShip('playerBoard', 1, 'submarine', 'right')
+g.addShip('playerBoard', 8, 'cruiser', 'down')
+g.addShip('playerBoard', 91, 'carrier', 'right')
+g.addShip('playerBoard', 49, 'battleship', 'down')
