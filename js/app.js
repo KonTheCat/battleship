@@ -5,6 +5,13 @@ class Game {
         this.mode = 'inspect'
         this.state = 'playing'
         this.isComputerTurn = false
+        this.computerTarget = {
+            use: false,
+            cells: [],
+            directionVertical: false,
+            directionHorizontal: false,
+            directionCross: false
+        }
         this.playerBoard = {
             parent: document.getElementById('player_board'),
             cells: {},
@@ -92,8 +99,19 @@ class Game {
                 for (let cell in this[whichBoard].ships[ship].cells) {
                     this[whichBoard].cells[cell].isSunk = true
                 }
+                if(whichBoard === 'playerBoard') {
+                    console.log(`sunk a ship on the player board, clearing computer target data`)
+                    this.clearComputerTarget()
+                }
             }
         }
+    }
+    clearComputerTarget(){
+        this.computerTarget.use = false
+        this.computerTarget.cells = []
+        this.computerTarget.directionHorizontal = false
+        this.computerTarget.directionVertical = false
+        this.computerTarget.directionCross = false
     }
     renderBoard(whichBoard) {
         this[whichBoard].parent.innerHTML = ''
@@ -230,28 +248,61 @@ class Game {
         this.renderBoard('playerBoard')
         this.renderBoard('computerBoard')
     }
+    updateComputerTarget() {
+        if (this.computerTarget.cells.length < 3) {
+            console.log('we have enough data to set a target direction, but not so much as to make a mess of it')
+            if (this.computerTarget.cells.length === 2 && this.computerTarget.directionVertical === false && this.computerTarget.directionHorizontal === false) {
+                const cellComparisonResult = this.computerTarget.cells[0] - this.computerTarget.cells[1]
+                if (cellComparisonResult === -10 || cellComparisonResult === 10) {
+                    console.log(`comparison result is ${cellComparisonResult} setting computer target direction to vertical`)
+                    this.computerTarget.directionVertical = true
+                    this.computerTarget.directionCross = false
+                } else if (cellComparisonResult === 1 || cellComparisonResult === -1) {
+                    console.log(`comparison result is ${cellComparisonResult} setting computer target direction to horizontal`)
+                    this.computerTarget.directionHorizontal = true
+                    this.computerTarget.directionCross = false
+                } else {
+                    console.log(`unable to set computer target direction based on cell comparison result of ${cellComparisonResult}`)
+                    console.log(this.computerTarget)
+                }
+            } else if (this.computerTarget.cells.length === 1) {
+                console.log('setting computer target direction to cross')
+                this.computerTarget.directionCross = true
+            } else {
+                console.log(`unable to set computer target direction based on available data`)
+                console.log(this.computerTarget)
+            }
+        } else {
+            console.log(`we do not bother setting the computer target at this time`)
+        } 
+        
+    }
     runComputerTurn() {
         console.log(`Computer taking a turn.`)
         this.computerAttackCell()
         this.isComputerTurn = false
     }
-    computerAttackCell(previousHitID) { //add a target ship direction here, or something. make a property to hold this data in the class
-        const idOfCellToAttack = this.getCellToAttack('playerBoard', previousHitID)
+    computerAttackCell(){
+        const idOfCellToAttack = this.getCellToAttack('playerBoard')
         console.log(`Computer attacking cell ${idOfCellToAttack}`)
         if (this['playerBoard'].cells[idOfCellToAttack].isShip) {
             console.log(`computer hit ship at cell ${idOfCellToAttack}, computer goes again`)
             this['playerBoard'].cells[idOfCellToAttack].isHit = true
             const hitShipKey = Object.keys(this['playerBoard'].cells[idOfCellToAttack].contains)
             this['playerBoard'].ships[hitShipKey].cells[this['playerBoard'].cells[idOfCellToAttack].id].isHit = true
-            this.computerAttackCell(idOfCellToAttack)
+            this.computerTarget.use = true
+            this.computerTarget.cells.push(idOfCellToAttack)
+            this.updateComputerTarget()
+            this.computerAttackCell()
             this.updateAndRender()
         }
         if (this['playerBoard'].cells[idOfCellToAttack].isWater) {
             this['playerBoard'].cells[idOfCellToAttack].isHit = true
             console.log('computer hit water')
+            this.updateAndRender()
         }
     }
-    getAttackableCellsRandomly(whichBoard) {
+    getAttackableCellsBroadly(whichBoard) {
         const arrayOfAttackableCells = []
         for (let cell in this[whichBoard].cells) {
             if(this[whichBoard].cells[cell].isHit === false) {
@@ -260,30 +311,52 @@ class Game {
         }
         return arrayOfAttackableCells
     }
-    getCellToAttack(whichBoard, previousHitID) {
+    getCellToAttack(whichBoard) {
+        const searchPatternCross = [-10, -1, 1, 10]
+        const searchPatternVertical = [-10, 10]
+        const searchPatternHorizontal = [-1, 1]
         let arrayOfAttackableCells = []
-        if (previousHitID){
-            console.log(`computer player hunting narrowly for reasonable targets around ${previousHitID}`)
-            const searchPatternAlpha = [ -10, -1, 1, 10]
-            searchPatternAlpha.forEach(element => {
-                const idToTest = Number(previousHitID) + Number(element)
-                if (idToTest > 0 && idToTest < 100) {
-                    if (!this[whichBoard].cells[idToTest].isHit){
-                        arrayOfAttackableCells.push(idToTest)
-                    }
-                }
-                if (arrayOfAttackableCells.length === 0) {
-                    console.log(`there are no squares that its reasonable to attack around ${previousHitID}, returning to the broad profile`)
-                    arrayOfAttackableCells = this.getAttackableCellsRandomly('playerBoard')
-                }
-            })
+        if (this.computerTarget.use){
+            console.log(`computer player hunting narrowly for reasonable targets using stored target data`)
+            console.log(this.computerTarget)
+            if (this.computerTarget.directionCross) {
+                console.log(`the computer player has a single previous hit stored, using the cross search pattern.`)
+                arrayOfAttackableCells = this.getAttackableCellsUsingPattern(whichBoard, searchPatternCross)
+            }
+            if (this.computerTarget.directionVertical) {
+                console.log(`computer hunting for target using the vertical search profile`)
+                arrayOfAttackableCells = this.getAttackableCellsUsingPattern(whichBoard, searchPatternVertical)
+            }
+            if (this.computerTarget.directionHorizontal) {
+                console.log(`computer hunting for target using the horizontal search profile`)
+                arrayOfAttackableCells = this.getAttackableCellsUsingPattern(whichBoard, searchPatternHorizontal)
+            }
+            if (arrayOfAttackableCells.length === 0) {
+                console.log(`there are no squares that its reasonable to attack using stored data, returning to the broad profile`)
+                arrayOfAttackableCells = this.getAttackableCellsBroadly('playerBoard')
+            } 
+
         } else {
-            arrayOfAttackableCells = this.getAttackableCellsRandomly('playerBoard')
+            arrayOfAttackableCells = this.getAttackableCellsBroadly('playerBoard')
             console.log(`computer is hunting randomly, taking into account all previous hits`)
 
         }
         return getRandomElementFromArray(arrayOfAttackableCells)
     }
+    getAttackableCellsUsingPattern(whichBoard, pattern){
+        const attackableCells = []
+        this.computerTarget.cells.forEach(cellInTarget => {
+            pattern.forEach(searchPatternElemenet => {
+                const idToTest = Number(cellInTarget) + Number(searchPatternElemenet)
+                if (idToTest > 0 && idToTest < 100) {
+                    if (!this[whichBoard].cells[idToTest].isHit){
+                        attackableCells.push(idToTest)
+                    }
+                }
+            })
+        })
+        return attackableCells
+    } 
     checkVictory() {
         if (this.checkIfAllShipsSunk('playerBoard')) {
             console.log(`all player ships sunk, computer wins`)
@@ -304,6 +377,7 @@ class Game {
 }
 
 // Main Game Controller
+
 const g = new Game(10, 40)
 g.renderControlButtons()
 g.initBoard('playerBoard', false)
@@ -320,7 +394,6 @@ g.addShip('computerBoard', 1, 'submarine', 'right')
 g.addShip('computerBoard', 8, 'cruiser', 'down')
 g.addShip('computerBoard', 91, 'carrier', 'right')
 g.addShip('computerBoard', 45, 'battleship', 'down')
-
 
 // End of Main Game Controller
 
