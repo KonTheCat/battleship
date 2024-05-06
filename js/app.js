@@ -215,7 +215,7 @@ class Game {
             this[whichBoard].ships[type].isPlaced = true
             this.updateAndRender()
         } else {
-            console.log(`Adding ship failed.`)
+            console.log(`Adding ship failed, validation failure.`)
         }
     }
     validateAddShip(whichBoard, startingCellID, size, downOrRight) {
@@ -228,18 +228,26 @@ class Game {
                     currentCellID += 1
                 }
             } else {
-                throw new Error(`Illegal ship placement, a cell is occupied. The placement attempt was for board ${whichBoard}, starting cell ${startingCellID}, size ${size}, downOrRight ${downOrRight}, and the erroring cell was ${currentCellID}.`)
+                console.log(`returning false from ship placement validation`)
                 return false
             }
         }
         return true
     }
     validateCellForShipPlacement(whichBoard, cellID) {
-        if (this[whichBoard].cells[cellID].isWater) {
-            return true
-        } else {
-            return false
+        console.log(`validating on board ${whichBoard} cell ${cellID}`)
+        const validationPatternBox = [-11, -10, -9, -1, 1, 9, 10, 11]
+        for (let i = 0; i < validationPatternBox.length; i++) {
+            const indexToTest = Number(cellID) + Number(validationPatternBox[i]) 
+            if(indexToTest >= 0 & indexToTest < 100) {
+                console.log(`cell ${indexToTest} isWater is ${this[whichBoard].cells[indexToTest].isWater}`)
+                if (!this[whichBoard].cells[indexToTest].isWater) {
+                    console.log(`returning false from cell validation`)
+                    return false
+                }
+            }
         }
+        return true
     }
     updateAndRender() {
         this.updateShipsStatus('playerBoard')
@@ -249,7 +257,7 @@ class Game {
         this.renderBoard('computerBoard')
     }
     updateComputerTarget() {
-        if (this.computerTarget.cells.length < 3) {
+        if (this.computerTarget.cells.length < 3 && this.computerTarget.use) {
             console.log('we have enough data to set a target direction, but not so much as to make a mess of it')
             if (this.computerTarget.cells.length === 2 && this.computerTarget.directionVertical === false && this.computerTarget.directionHorizontal === false) {
                 const cellComparisonResult = this.computerTarget.cells[0] - this.computerTarget.cells[1]
@@ -273,7 +281,7 @@ class Game {
                 console.log(this.computerTarget)
             }
         } else {
-            console.log(`we do not bother setting the computer target at this time`)
+            console.log(`we do not bother setting the computer target direction at this time`)
         } 
         
     }
@@ -292,6 +300,7 @@ class Game {
             this['playerBoard'].ships[hitShipKey].cells[this['playerBoard'].cells[idOfCellToAttack].id].isHit = true
             this.computerTarget.use = true
             this.computerTarget.cells.push(idOfCellToAttack)
+            this.updateAndRender()
             this.updateComputerTarget()
             this.computerAttackCell()
             this.updateAndRender()
@@ -348,7 +357,7 @@ class Game {
         this.computerTarget.cells.forEach(cellInTarget => {
             pattern.forEach(searchPatternElemenet => {
                 const idToTest = Number(cellInTarget) + Number(searchPatternElemenet)
-                if (idToTest > 0 && idToTest < 100) {
+                if (idToTest >= 0 && idToTest < 100) {
                     if (!this[whichBoard].cells[idToTest].isHit){
                         attackableCells.push(idToTest)
                     }
@@ -384,8 +393,8 @@ g.initBoard('playerBoard', false)
 g.initShips('playerBoard')
 g.initBoard('computerBoard', true)
 g.initShips('computerBoard')
-g.addShip('playerBoard', 20, 'destroyer', 'down')
-g.addShip('playerBoard', 1, 'submarine', 'right')
+g.addShip('playerBoard', 0, 'destroyer', 'down')
+g.addShip('playerBoard', 2, 'submarine', 'right')
 g.addShip('playerBoard', 8, 'cruiser', 'down')
 g.addShip('playerBoard', 91, 'carrier', 'right')
 g.addShip('playerBoard', 45, 'battleship', 'down')
