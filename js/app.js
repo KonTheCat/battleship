@@ -113,16 +113,16 @@ class Game {
         this.computerTarget.directionVertical = false
         this.computerTarget.directionCross = false
     }
-    renderBoard(whichBoard) {
+    renderBoard(whichBoard, noListner = false) {
         this[whichBoard].parent.innerHTML = ''
         this[whichBoard].parent.style.width = `${this.boardSideSize * (this.cellSize + 2)}px`
         this[whichBoard].parent.style.display = "flex"
         this[whichBoard].parent.style.flexWrap = "wrap"
         for (let cell in this[whichBoard].cells) {
-            this.renderBoardCell(whichBoard, this[whichBoard].parent, this[whichBoard].cells[cell].id)
+            this.renderBoardCell(whichBoard, this[whichBoard].parent, this[whichBoard].cells[cell].id, noListner)
         }
     }
-    renderBoardCell(whichBoard, parent, id, style = "1px solid black") {
+    renderBoardCell(whichBoard, parent, id, noListner = false, style = "1px solid black") {
         const cell = document.createElement("div")
         if (this[whichBoard].cells[id].isShip) {
             cell.style.backgroundColor = 'black'
@@ -151,18 +151,20 @@ class Game {
         cell.style.width = `${this.cellSize}px`
         cell.style.border = style
         cell.id = id
-        switch (this.mode) {
-            case 'inspect':
-                cell.addEventListener("click", this[whichBoard].cells[id].identify)
-                break
-            case 'reveal':
-                cell.addEventListener("click", this[whichBoard].cells[id].reveal)
-                break
-            case 'attack':
-                cell.addEventListener("click", this[whichBoard].cells[id].attack)
-                break
-            default:
-                break;
+        if(!noListner) {
+            switch (this.mode) {
+                case 'inspect':
+                    cell.addEventListener("click", this[whichBoard].cells[id].identify)
+                    break
+                case 'reveal':
+                    cell.addEventListener("click", this[whichBoard].cells[id].reveal)
+                    break
+                case 'attack':
+                    cell.addEventListener("click", this[whichBoard].cells[id].attack)
+                    break
+                default:
+                    break;
+            }
         }
         parent.append(cell)
     }
@@ -281,7 +283,7 @@ class Game {
         this.updateShipsStatus('playerBoard')
         this.updateShipsStatus('computerBoard')
         this.checkVictory()
-        this.renderBoard('playerBoard')
+        this.renderBoard('playerBoard', true)
         this.renderBoard('computerBoard')
     }
     updateComputerTarget() {
