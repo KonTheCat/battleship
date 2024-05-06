@@ -235,14 +235,11 @@ class Game {
         return true
     }
     validateCellForShipPlacement(whichBoard, cellID) {
-        console.log(`validating on board ${whichBoard} cell ${cellID}`)
         const validationPatternBox = [-11, -10, -9, -1, 1, 9, 10, 11]
         for (let i = 0; i < validationPatternBox.length; i++) {
             const indexToTest = Number(cellID) + Number(validationPatternBox[i]) 
             if(indexToTest >= 0 & indexToTest < 100) {
-                console.log(`cell ${indexToTest} isWater is ${this[whichBoard].cells[indexToTest].isWater}`)
                 if (!this[whichBoard].cells[indexToTest].isWater) {
-                    console.log(`returning false from cell validation`)
                     return false
                 }
             }
