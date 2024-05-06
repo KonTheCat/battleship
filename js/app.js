@@ -2,7 +2,7 @@ class Game {
     constructor(boardSideSize, cellSize) {
         this.boardSideSize = boardSideSize
         this.cellSize = cellSize
-        this.mode = 'inspect'
+        this.mode = 'attack'
         this.state = 'playing'
         this.isComputerTurn = false
         this.computerTarget = {
@@ -69,11 +69,11 @@ class Game {
     initShips(whichBoard){
         console.log(`running initShips`)
         const ships = {
-            destroyer: {size: 2, cells: {}, isSunk: false, isPlaced: false},
+            carrier: {size: 5, cells: {}, isSunk: false, isPlaced: false},
+            battleship: {size: 4, cells: {}, isSunk: false, isPlaced: false},
             submarine: {size: 3, cells: {}, isSunk: false, isPlaced: false},
             cruiser: {size: 3, cells: {}, isSunk: false, isPlaced: false},
-            battleship: {size: 4, cells: {}, isSunk: false, isPlaced: false},
-            carrier: {size: 5, cells: {}, isSunk: false, isPlaced: false},
+            destroyer: {size: 2, cells: {}, isSunk: false, isPlaced: false},
         }
         for (let ship in ships) {
             let initedShip = ships[ship]
@@ -220,15 +220,22 @@ class Game {
     }
     validateAddShip(whichBoard, startingCellID, size, downOrRight) {
         let currentCellID = startingCellID
+        const cellsRightCheckSameRow = []
         for (let i = 0; i < size; i++) {
             if (this.validateCellForShipPlacement(whichBoard, currentCellID)) {
                 if (downOrRight === 'down') {
                     currentCellID += 10
                 } else if (downOrRight === 'right') {
+                    cellsRightCheckSameRow.push(currentCellID)
                     currentCellID += 1
                 }
             } else {
-                console.log(`returning false from ship placement validation`)
+                //console.log(`returning false from ship placement validation`)
+                return false
+            }
+
+            if (downOrRight === 'right' && Math.floor(cellsRightCheckSameRow[0] / 10) != Math.floor(cellsRightCheckSameRow[cellsRightCheckSameRow.length - 1] / 10)) {
+                //console.log(`returning false from ship placement validation, not same row`)
                 return false
             }
         }
@@ -238,13 +245,37 @@ class Game {
         const validationPatternBox = [-11, -10, -9, -1, 1, 9, 10, 11]
         for (let i = 0; i < validationPatternBox.length; i++) {
             const indexToTest = Number(cellID) + Number(validationPatternBox[i]) 
-            if(indexToTest >= 0 & indexToTest < 100) {
+            if(indexToTest >= 0 && indexToTest < 100) {
                 if (!this[whichBoard].cells[indexToTest].isWater) {
                     return false
                 }
+            } else {
+                return false
             }
         }
         return true
+    }
+    placeShipsRandomly(whichBoard) {
+        for (let ship in this[whichBoard].ships) {
+            let downOrRight = getRandomElementFromArray(['down', 'right'])
+            const size = this[whichBoard].ships[ship].size
+            const cell = this.getCellForRandomShipPlacement(whichBoard, size, downOrRight)
+            this.addShip(whichBoard, cell, ship, downOrRight)
+            this.updateAndRender()
+        }
+    }
+    getCellForRandomShipPlacement(whichBoard, size, downOrRight) {
+        const cellsForShipPlacement = []
+        for (let i = 0; i < Object.keys(this[whichBoard].cells).length; i++) {
+            if (this.validateAddShip(whichBoard, i, size, downOrRight)) {
+                cellsForShipPlacement.push(i)
+            }
+        }
+        if (cellsForShipPlacement.length === 0) {
+            console.log(`no valid cells for ship placement`)
+            return
+        }
+        return getRandomElementFromArray(cellsForShipPlacement)
     }
     updateAndRender() {
         this.updateShipsStatus('playerBoard')
@@ -380,31 +411,29 @@ class Game {
         }
         return sunkShipCounter === 5
     }
+    demoRevealBoard(whichBoard){
+        for (let cell in this[whichBoard].cells) {
+            this[whichBoard].cells[cell].isHidden = false
+        }
+        this.updateAndRender()
+    }
 }
 
 // Main Game Controller
 
 const g = new Game(10, 40)
-g.renderControlButtons()
+//g.renderControlButtons()
 g.initBoard('playerBoard', false)
 g.initShips('playerBoard')
 g.initBoard('computerBoard', true)
 g.initShips('computerBoard')
-g.addShip('playerBoard', 0, 'destroyer', 'down')
-g.addShip('playerBoard', 2, 'submarine', 'right')
-g.addShip('playerBoard', 8, 'cruiser', 'down')
-g.addShip('playerBoard', 91, 'carrier', 'right')
-g.addShip('playerBoard', 45, 'battleship', 'down')
-g.addShip('computerBoard', 20, 'destroyer', 'down')
-g.addShip('computerBoard', 1, 'submarine', 'right')
-g.addShip('computerBoard', 8, 'cruiser', 'down')
-g.addShip('computerBoard', 91, 'carrier', 'right')
-g.addShip('computerBoard', 45, 'battleship', 'down')
+g.placeShipsRandomly('computerBoard')
+g.placeShipsRandomly('playerBoard')
 
 // End of Main Game Controller
 
 function getRandomElementFromArray(array) {
-    console.log(`picking from the following options ${array}`)
+    //console.log(`picking from the following options ${array}`)
     const randomIndex = Math.floor(Math.random() * array.length)
     return array[randomIndex]
 }
