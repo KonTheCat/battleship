@@ -2,7 +2,7 @@ class Game {
     constructor(boardSideSize, cellSize) {
         this.boardSideSize = boardSideSize
         this.cellSize = cellSize
-        this.mode = 'attack'
+        this.mode = ''
         this.state = 'playing'
         this.isComputerTurn = false
         this.computerTarget = {
@@ -11,6 +11,12 @@ class Game {
             directionVertical: false,
             directionHorizontal: false,
             directionCross: false
+        }
+        this.waitDeploymentDone = true
+        this.shipToPlace = {
+            board: '',
+            type: '',
+            orientation: ''
         }
         this.playerBoard = {
             parent: document.getElementById('player_board'),
@@ -62,6 +68,9 @@ class Game {
                         console.log(`cell was already attacked`)
                     }
                     this.updateAndRender()
+                },
+                deployment: () => {
+                    this.addShip(this.shipToPlace.board, this[whichBoard].cells[i].id, this.shipToPlace.type, this.shipToPlace.orientation)
                 }
             }  
         }
@@ -166,62 +175,108 @@ class Game {
                     break;
             }
         }
+        if (this.mode === 'deployment' && whichBoard === 'playerBoard') {
+            cell.addEventListener("click", this[whichBoard].cells[id].deployment)
+        }
         parent.append(cell)
     }
     renderControlButtons(){
-        parent = document.getElementById('control_buttons')
-        let newButton = document.createElement('button')
-        newButton.innerHTML = `<h4>Reveal</h4>`
-        newButton.addEventListener('click', () => {
-            this.mode = 'reveal'
-            console.log(`Game mode set to ${this.mode}`)
-            this.updateAndRender()
-        })
-        parent.appendChild(newButton)
+        const parent = document.getElementById('control_buttons')
+        // let newButton = document.createElement('button')
+        // newButton.innerHTML = `<h4>Reveal</h4>`
+        // newButton.addEventListener('click', () => {
+        //     this.mode = 'reveal'
+        //     console.log(`Game mode set to ${this.mode}`)
+        //     this.updateAndRender()
+        // })
+        // parent.appendChild(newButton)
 
-        newButton = document.createElement('button')
-        newButton.innerHTML = `<h4>Inspect</h4>`
-        newButton.addEventListener('click', () => {
-            this.mode = 'inspect'
-            console.log(`Game mode set to ${this.mode}`)
-            this.updateAndRender()
-        })
-        parent.appendChild(newButton)
+        // newButton = document.createElement('button')
+        // newButton.innerHTML = `<h4>Inspect</h4>`
+        // newButton.addEventListener('click', () => {
+        //     this.mode = 'inspect'
+        //     console.log(`Game mode set to ${this.mode}`)
+        //     this.updateAndRender()
+        // })
+        // parent.appendChild(newButton)
 
-        newButton = document.createElement('button')
-        newButton.innerHTML = `<h4>Attack</h4>`
-        newButton.addEventListener('click', () => {
-            this.mode = 'attack'
-            console.log(`Game mode set to ${this.mode}`)
-            this.updateAndRender()
+        // newButton = document.createElement('button')
+        // newButton.innerHTML = `<h4>Attack</h4>`
+        // newButton.addEventListener('click', () => {
+        //     this.mode = 'attack'
+        //     console.log(`Game mode set to ${this.mode}`)
+        //     this.updateAndRender()
+        // })
+        // parent.appendChild(newButton)
+
+        const resetButton = document.createElement('button')
+        resetButton.innerHTML = 'Reset Game'
+        resetButton.addEventListener('click', () => {
+            location.reload()
         })
-        parent.appendChild(newButton)
+        parent.appendChild(resetButton)
     }
-    addShip(whichBoard, startingCellID, type, downOrRight){
-        const size = this[whichBoard].ships[type].size
-        if (this.validateAddShip(whichBoard, startingCellID, size, downOrRight)) {
-            let currentCellID = startingCellID
-            let shipObjectCellIterator = 0
-            for (let i = 0; i < size; i++) {
-                this[whichBoard].cells[currentCellID].isShip = true
-                this[whichBoard].cells[currentCellID].isWater = false
-                this[whichBoard].cells[currentCellID].contains[type] = this[whichBoard].ships[type]
-                this[whichBoard].ships[type].cells[currentCellID] = {id: currentCellID, isHit: false}
-                shipObjectCellIterator ++
-                if (downOrRight === 'down') {
-                    currentCellID += 10
-                } else if (downOrRight === 'right') {
-                    currentCellID += 1
-                }
+    renderPlayerShipDeploymentButtons(){
+        const parent = document.getElementById('ship_deployment_buttons')
+        const orientations = [
+            {
+                display: 'Horizontal',
+                code: 'right'
+            },
+            {
+                display: 'Vertical',
+                code: 'down'
             }
-            this[whichBoard].ships[type].isPlaced = true
-            this.updateAndRender()
-        } else {
-            console.log(`Adding ship failed, validation failure.`)
+        ]
+        for (let ship in this.playerBoard.ships) {
+            orientations.forEach(orientation => {
+                const newButton = document.createElement('button')
+                newButton.innerHTML = `${String(ship)[0].toUpperCase() + String(ship).slice(1)}: ${orientation.display}`
+                newButton.className = `deploy_${ship}`
+                newButton.addEventListener('click', () => {
+                    this.mode = 'deployment'
+                    this.shipToPlace.board = 'playerBoard'
+                    this.shipToPlace.type = ship
+                    this.shipToPlace.orientation = orientation.code
+                    console.log(`Game mode set to ${this.mode}`)
+                    this.updateAndRender()
+                    document.querySelectorAll(`button.deploy_${ship}`).forEach(button => {
+                        button.disabled = true
+                    })
+                })
+                parent.appendChild(newButton)
+            })
         }
     }
+    addShip(whichBoard, startingCellID, type, downOrRight){
+        console.log(`adding ship ${whichBoard}, ${startingCellID}, ${type}, ${downOrRight}`)
+        if(! this[whichBoard].ships[type].isPlaced) {
+            const size = this[whichBoard].ships[type].size
+            if (this.validateAddShip(whichBoard, startingCellID, size, downOrRight)) {
+                let currentCellID = startingCellID
+                for (let i = 0; i < size; i++) {
+                    this[whichBoard].cells[currentCellID].isShip = true
+                    this[whichBoard].cells[currentCellID].isWater = false
+                    this[whichBoard].cells[currentCellID].contains[type] = this[whichBoard].ships[type]
+                    this[whichBoard].ships[type].cells[currentCellID] = {id: currentCellID, isHit: false}
+                    if (downOrRight === 'down') {
+                        currentCellID += 10
+                    } else if (downOrRight === 'right') {
+                        currentCellID += 1
+                    }
+                }
+                this[whichBoard].ships[type].isPlaced = true
+                this.updateAndRender()
+            } else {
+                console.log(`Adding ship failed, validation failure. Request was for board ${whichBoard}, cell ${startingCellID}, type ${type}, downOrRight ${downOrRight}`)
+            }
+        } else {
+            console.log(`the ship ${type} is placed and may not be placed again`)
+        }
+
+    }
     validateAddShip(whichBoard, startingCellID, size, downOrRight) {
-        let currentCellID = startingCellID
+        let currentCellID = Number(startingCellID)
         const cellsRightCheckSameRow = []
         for (let i = 0; i < size; i++) {
             if (this.validateCellForShipPlacement(whichBoard, currentCellID)) {
@@ -232,19 +287,21 @@ class Game {
                     currentCellID += 1
                 }
             } else {
-                //console.log(`returning false from ship placement validation`)
+                console.log(`returning false from ship placement validation`)
                 return false
             }
 
             if (downOrRight === 'right' && Math.floor(cellsRightCheckSameRow[0] / 10) != Math.floor(cellsRightCheckSameRow[cellsRightCheckSameRow.length - 1] / 10)) {
-                //console.log(`returning false from ship placement validation, not same row`)
+                console.log(`returning false from ship placement validation, not same row`)
                 return false
             }
         }
         return true
     }
     validateCellForShipPlacement(whichBoard, cellID) {
-        const validationPatternBox = [-11, -10, -9, -1, 1, 9, 10, 11]
+        console.log(`validating cell ${cellID} for ship placement`)
+        if (cellID >= 0 && cellID < 100) {
+            const validationPatternBox = [-11, -10, -9, -1, 1, 9, 10, 11]
         for (let i = 0; i < validationPatternBox.length; i++) {
             const indexToTest = Number(cellID) + Number(validationPatternBox[i]) 
             if(indexToTest >= 0 && indexToTest < 100) {
@@ -252,10 +309,13 @@ class Game {
                     return false
                 }
             } else {
-                return false
+                return true
             }
         }
-        return true
+            return true
+        } else {
+            return false
+        }
     }
     placeShipsRandomly(whichBoard) {
         for (let ship in this[whichBoard].ships) {
@@ -282,9 +342,18 @@ class Game {
     updateAndRender() {
         this.updateShipsStatus('playerBoard')
         this.updateShipsStatus('computerBoard')
+        this.checkPlayerShipDeployment()
         this.checkVictory()
         this.renderBoard('playerBoard', true)
         this.renderBoard('computerBoard')
+    }
+    checkPlayerShipDeployment(){
+        if (this.checkAllShipsStatus('playerBoard', 'isPlaced') && this.waitDeploymentDone) {
+            console.log(`player ship deployment done`)
+            this.mode = 'attack'
+            this.waitDeploymentDone = false
+            this.updateAndRender()
+        }
     }
     updateComputerTarget() {
         if (this.computerTarget.cells.length < 3 && this.computerTarget.use) {
@@ -413,6 +482,15 @@ class Game {
         }
         return sunkShipCounter === 5
     }
+    checkAllShipsStatus(whichBoard, status) {
+        let shipCounter = 0
+        for (let ship in this[whichBoard].ships) {
+            if (this[whichBoard].ships[ship][status]) {
+                shipCounter ++
+            }
+        }
+        return shipCounter === 5
+    }
     unhideBoard(whichBoard){
         for (let cell in this[whichBoard].cells) {
             this[whichBoard].cells[cell].isHidden = false
@@ -427,13 +505,14 @@ class Game {
 // Main Game Controller
 
 const g = new Game(10, 40)
-//g.renderControlButtons()
+g.renderControlButtons()
 g.initBoard('playerBoard', false)
 g.initShips('playerBoard')
 g.initBoard('computerBoard', true)
 g.initShips('computerBoard')
+g.renderPlayerShipDeploymentButtons()
 g.placeShipsRandomly('computerBoard')
-g.placeShipsRandomly('playerBoard')
+// g.placeShipsRandomly('playerBoard')
 
 // End of Main Game Controller
 
