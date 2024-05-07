@@ -413,11 +413,14 @@ class Game {
         }
         return sunkShipCounter === 5
     }
-    demoRevealBoard(whichBoard){
+    unhideBoard(whichBoard){
         for (let cell in this[whichBoard].cells) {
             this[whichBoard].cells[cell].isHidden = false
         }
         this.updateAndRender()
+    }
+    demo() {
+        this.unhideBoard('computerBoard')
     }
 }
 
