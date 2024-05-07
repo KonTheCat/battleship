@@ -517,12 +517,10 @@ g.initBoard('computerBoard', true)
 g.initShips('computerBoard')
 g.renderPlayerShipDeploymentButtons()
 g.placeShipsRandomly('computerBoard')
-// g.placeShipsRandomly('playerBoard')
 
 // End of Main Game Controller
 
 function getRandomElementFromArray(array) {
-    //console.log(`picking from the following options ${array}`)
     const randomIndex = Math.floor(Math.random() * array.length)
     return array[randomIndex]
 }
