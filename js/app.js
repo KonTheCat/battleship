@@ -3,7 +3,7 @@ class Game {
         this.boardSideSize = boardSideSize
         this.cellSize = cellSize
         this.mode = ''
-        this.state = 'playing'
+        this.playerWon
         this.isComputerTurn = false
         this.computerTarget = {
             use: false,
@@ -160,7 +160,8 @@ class Game {
         cell.style.width = `${this.cellSize}px`
         cell.style.border = style
         cell.id = id
-        if(!noListner) {
+        cell.className = `${whichBoard}_cell`
+        if(! noListner) {
             switch (this.mode) {
                 case 'inspect':
                     cell.addEventListener("click", this[whichBoard].cells[id].identify)
@@ -170,6 +171,8 @@ class Game {
                     break
                 case 'attack':
                     cell.addEventListener("click", this[whichBoard].cells[id].attack)
+                    break
+                case 'over':
                     break
                 default:
                     break;
@@ -182,35 +185,8 @@ class Game {
     }
     renderControlButtons(){
         const parent = document.getElementById('control_buttons')
-        // let newButton = document.createElement('button')
-        // newButton.innerHTML = `<h4>Reveal</h4>`
-        // newButton.addEventListener('click', () => {
-        //     this.mode = 'reveal'
-        //     console.log(`Game mode set to ${this.mode}`)
-        //     this.updateAndRender()
-        // })
-        // parent.appendChild(newButton)
-
-        // newButton = document.createElement('button')
-        // newButton.innerHTML = `<h4>Inspect</h4>`
-        // newButton.addEventListener('click', () => {
-        //     this.mode = 'inspect'
-        //     console.log(`Game mode set to ${this.mode}`)
-        //     this.updateAndRender()
-        // })
-        // parent.appendChild(newButton)
-
-        // newButton = document.createElement('button')
-        // newButton.innerHTML = `<h4>Attack</h4>`
-        // newButton.addEventListener('click', () => {
-        //     this.mode = 'attack'
-        //     console.log(`Game mode set to ${this.mode}`)
-        //     this.updateAndRender()
-        // })
-        // parent.appendChild(newButton)
-
         const resetButton = document.createElement('button')
-        resetButton.innerHTML = 'Reset Game'
+        resetButton.innerHTML = '<h4>Reset Game</h4>'
         resetButton.addEventListener('click', () => {
             location.reload()
         })
@@ -218,6 +194,21 @@ class Game {
     }
     renderPlayerShipDeploymentButtons(){
         const parent = document.getElementById('ship_deployment_buttons')
+        const randomPlayerShipDeploymentButton = document.createElement('button')
+        randomPlayerShipDeploymentButton.innerHTML = `Place My Ships Randomly`
+        randomPlayerShipDeploymentButton.classList.add(`deploy_randomly`)
+        randomPlayerShipDeploymentButton.classList.add(`deploy`)
+        randomPlayerShipDeploymentButton.addEventListener('click', () => {
+            this.mode = 'deployment'
+            console.log(`Game mode set to ${this.mode}`)
+            this.placeShipsRandomly('playerBoard')
+            this.updateAndRender()
+            document.querySelectorAll(`button.deploy`).forEach(button => {
+                button.disabled = true
+            })
+        })
+        parent.appendChild(randomPlayerShipDeploymentButton)
+        
         const orientations = [
             {
                 display: 'Horizontal',
@@ -232,7 +223,8 @@ class Game {
             orientations.forEach(orientation => {
                 const newButton = document.createElement('button')
                 newButton.innerHTML = `${String(ship)[0].toUpperCase() + String(ship).slice(1)}: ${orientation.display}`
-                newButton.className = `deploy_${ship}`
+                newButton.classList.add(`deploy_${ship}`)
+                newButton.classList.add(`deploy`)
                 newButton.addEventListener('click', () => {
                     this.mode = 'deployment'
                     this.shipToPlace.board = 'playerBoard'
@@ -346,6 +338,15 @@ class Game {
         this.checkVictory()
         this.renderBoard('playerBoard', true)
         this.renderBoard('computerBoard')
+        this.renderUI()
+    }
+    renderUI() {
+        const gameStatus = document.getElementById('game_status')
+        if (this.playerWon === true) {
+            gameStatus.innerHTML = 'You won!'
+        } else if (this.playerWon === false){
+            gameStatus.innerHTML = 'You lost!'
+        }
     }
     checkPlayerShipDeployment(){
         if (this.checkAllShipsStatus('playerBoard', 'isPlaced') && this.waitDeploymentDone) {
@@ -467,9 +468,13 @@ class Game {
     } 
     checkVictory() {
         if (this.checkIfAllShipsSunk('playerBoard')) {
+            this.playerWon = false
+            this.mode = 'over'
             console.log(`all player ships sunk, computer wins`)
         }
         if (this.checkIfAllShipsSunk('computerBoard')) {
+            this.playerWon = true
+            this.mode = 'over'
             console.log(`all computer ships sunk, player wins`)
         }
     }
