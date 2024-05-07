@@ -291,22 +291,34 @@ class Game {
         return true
     }
     validateCellForShipPlacement(whichBoard, cellID) {
-        console.log(`validating cell ${cellID} for ship placement`)
-        if (cellID >= 0 && cellID < 100) {
+        if (cellID >= 0 && cellID <= 99 && this[whichBoard].cells[cellID].isWater && !this[whichBoard].cells[cellID].isShip) {
             const validationPatternBox = [-11, -10, -9, -1, 1, 9, 10, 11]
-        for (let i = 0; i < validationPatternBox.length; i++) {
-            const indexToTest = Number(cellID) + Number(validationPatternBox[i]) 
-            if(indexToTest >= 0 && indexToTest < 100) {
-                if (!this[whichBoard].cells[indexToTest].isWater) {
-                    return false
-                }
+            const nearbyCellsValidationArray = []
+            for (let i = 0; i < validationPatternBox.length; i++) {
+                const indexToTest = Number(cellID) + Number(validationPatternBox[i])
+                nearbyCellsValidationArray.push(this.validateNearbyCellForShipPlacement(whichBoard, indexToTest))
+            }
+            if (nearbyCellsValidationArray.indexOf(false) >= 0) {
+                return false
             } else {
                 return true
             }
-        }
-            return true
         } else {
             return false
+        }
+    }
+    validateNearbyCellForShipPlacement(whichBoard, id) {
+        if(id <= 0 || id >= 99) {
+            console.log(`returning true validating cell ${id} for ship placement - 1`)
+            return true
+        } else {
+            if (this[whichBoard].cells[id].isWater && !this[whichBoard].cells[id].isShip) {
+                console.log(`returning true validating cell ${id} for ship placement - 2`)
+                return true
+            } else {
+                console.log(`returning false validating cell ${id} for ship placement`)
+                return false
+            }
         }
     }
     placeShipsRandomly(whichBoard) {
