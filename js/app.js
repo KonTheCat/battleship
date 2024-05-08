@@ -70,6 +70,9 @@ class Game {
                     }
                     this.updateAndRender()
                 },
+                attackMouseOver: () => {
+                    document.getElementById(`${whichBoard}_${i}`).style.cursor = 'crosshair'
+                },
                 deployment: () => {
                     this.addShip(this.shipToPlace.board, this[whichBoard].cells[i].id, this.shipToPlace.type, this.shipToPlace.orientation)
                     this.updateAndRender()
@@ -208,6 +211,7 @@ class Game {
                     break
                 case 'attack':
                     cell.addEventListener("click", this[whichBoard].cells[id].attack)
+                    cell.addEventListener("mouseover", this[whichBoard].cells[id].attackMouseOver)
                     break
                 case 'over':
                     break
