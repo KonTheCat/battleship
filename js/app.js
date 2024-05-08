@@ -40,6 +40,7 @@ class Game {
                 isHidden: initIsHidden,
                 isWater: true,
                 isShip: false,
+                isMouseEnterShipDeployment: false,
                 identify: () => {
                     console.log(`I am cell ${this[whichBoard].cells[i].id}, my details are below.`)
                     console.log(this[whichBoard].cells[i])
@@ -71,8 +72,34 @@ class Game {
                 },
                 deployment: () => {
                     this.addShip(this.shipToPlace.board, this[whichBoard].cells[i].id, this.shipToPlace.type, this.shipToPlace.orientation)
+                    this.updateAndRender()
+                },
+                deploymentMouseEnter: () => {
+                    this.renderShipDuringDeployment(this.shipToPlace.board, this[whichBoard].cells[i].id, 'enter')
+                },
+                deploymentMouseLeave: () => {
+                    this.renderShipDuringDeployment(this.shipToPlace.board, this[whichBoard].cells[i].id, 'leave')
                 }
             }  
+        }
+    }
+    renderShipDuringDeployment(whichBoard, id, enterOrLeave){
+        let color = ''
+        if (enterOrLeave === 'enter') {
+            color = 'black'
+        } else if (enterOrLeave === 'leave') {
+            color = '#4d5df0'
+        }
+        let changeFactor = 0
+        if (this.shipToPlace.orientation === 'right') {
+            changeFactor = 1
+        } else if (this.shipToPlace.orientation === 'down') {
+            changeFactor = 10
+        }
+        let currentID = id
+        for (let i = 0; i < this[whichBoard].ships[this.shipToPlace.type].size; i++) {
+            document.getElementById(`${whichBoard}_${this[whichBoard].cells[currentID].id}`).style.backgroundColor = color
+            currentID += changeFactor
         }
     }
     initShips(whichBoard){
@@ -156,10 +183,14 @@ class Game {
             cell.innerHTML = 'M'
             cell.style.color = 'black'
         }
+        if (this[whichBoard].cells[id].isMouseEnterShipDeployment){
+            cell.style.backgroundColor = 'black'
+            cell.style.opacity = '0.8'
+        }
         cell.style.height = `${this.cellSize}px`
         cell.style.width = `${this.cellSize}px`
         cell.style.border = style
-        cell.id = id
+        cell.id = `${whichBoard}_${id}`
         cell.className = `${whichBoard}_cell`
         if(! noListner) {
             switch (this.mode) {
@@ -180,6 +211,8 @@ class Game {
         }
         if (this.mode === 'deployment' && whichBoard === 'playerBoard') {
             cell.addEventListener("click", this[whichBoard].cells[id].deployment)
+            //cell.addEventListener("mouseleave", this[whichBoard].cells[id].deploymentMouseLeave)
+            //cell.addEventListener("mouseenter", this[whichBoard].cells[id].deploymentMouseEnter)
         }
         parent.append(cell)
     }
@@ -259,6 +292,7 @@ class Game {
                 }
                 this[whichBoard].ships[type].isPlaced = true
                 this.updateAndRender()
+                console.log(`added ship ${whichBoard}, ${startingCellID}, ${type}, ${downOrRight}`)
             } else {
                 console.log(`Adding ship failed, validation failure. Request was for board ${whichBoard}, cell ${startingCellID}, type ${type}, downOrRight ${downOrRight}`)
             }
@@ -363,6 +397,9 @@ class Game {
     checkPlayerShipDeployment(){
         if (this.checkAllShipsStatus('playerBoard', 'isPlaced') && this.waitDeploymentDone) {
             console.log(`player ship deployment done`)
+            document.querySelectorAll(`button.deploy`).forEach(button => {
+                button.disabled = true
+            })
             this.mode = 'attack'
             this.waitDeploymentDone = false
             this.updateAndRender()
