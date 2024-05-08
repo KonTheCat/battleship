@@ -72,9 +72,6 @@ class Game {
                 },
                 deployment: () => {
                     this.addShip(this.shipToPlace.board, this[whichBoard].cells[i].id, this.shipToPlace.type, this.shipToPlace.orientation)
-                    document.querySelectorAll(`button.deploy_${this.shipToPlace.type}`).forEach(button => {
-                        button.disabled = true
-                    })
                     this.updateAndRender()
                 },
                 deploymentMouseEnter: () => {
@@ -297,6 +294,11 @@ class Game {
                     }
                 }
                 this[whichBoard].ships[type].isPlaced = true
+                if (whichBoard === 'playerBoard') {
+                    document.querySelectorAll(`button.deploy_${type}`).forEach(button => {
+                        button.disabled = true
+                    })
+                }
                 this.updateAndRender()
                 console.log(`added ship ${whichBoard}, ${startingCellID}, ${type}, ${downOrRight}`)
             } else {
