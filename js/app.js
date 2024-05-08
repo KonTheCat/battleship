@@ -73,6 +73,9 @@ class Game {
                 deployment: () => {
                     this.addShip(this.shipToPlace.board, this[whichBoard].cells[i].id, this.shipToPlace.type, this.shipToPlace.orientation)
                     this.mode = ''
+                    document.querySelectorAll(`button.deploy_${this.shipToPlace.type}`).forEach(button => {
+                        button.disabled = true
+                    })
                     this.updateAndRender()
                 },
                 deploymentMouseEnter: () => {
@@ -85,8 +88,6 @@ class Game {
         }
     }
     renderShipDuringDeployment(whichBoard, id, enterOrLeave){
-        console.log(`${whichBoard}, ${id}, ${this[whichBoard].ships[this.shipToPlace.type].size}, ${this.shipToPlace.orientation}`)
-        console.log(this.validateAddShip(whichBoard, id, this[whichBoard].ships[this.shipToPlace.type].size, this.shipToPlace.orientation))
         if (this.validateAddShip(whichBoard, id, this[whichBoard].ships[this.shipToPlace.type].size, this.shipToPlace.orientation)) {
             let color = ''
             if (enterOrLeave === 'enter') {
@@ -110,7 +111,6 @@ class Game {
                 currentID += changeFactor
             }
         }
-
     }
     initShips(whichBoard){
         console.log(`running initShips`)
@@ -275,9 +275,6 @@ class Game {
                     this.shipToPlace.orientation = orientation.code
                     console.log(`Game mode set to ${this.mode}`)
                     this.updateAndRender()
-                    document.querySelectorAll(`button.deploy_${ship}`).forEach(button => {
-                        button.disabled = true
-                    })
                 })
                 parent.appendChild(newButton)
             })
