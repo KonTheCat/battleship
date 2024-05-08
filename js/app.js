@@ -298,6 +298,8 @@ class Game {
                     document.querySelectorAll(`button.deploy_${type}`).forEach(button => {
                         button.disabled = true
                     })
+                    this.mode = 'null'
+                    console.log(`setting game mode to ${this.mode}`)
                 }
                 this.updateAndRender()
                 console.log(`added ship ${whichBoard}, ${startingCellID}, ${type}, ${downOrRight}`)
