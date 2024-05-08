@@ -72,6 +72,7 @@ class Game {
                 },
                 deployment: () => {
                     this.addShip(this.shipToPlace.board, this[whichBoard].cells[i].id, this.shipToPlace.type, this.shipToPlace.orientation)
+                    this.mode = ''
                     this.updateAndRender()
                 },
                 deploymentMouseEnter: () => {
@@ -84,23 +85,32 @@ class Game {
         }
     }
     renderShipDuringDeployment(whichBoard, id, enterOrLeave){
-        let color = ''
-        if (enterOrLeave === 'enter') {
-            color = 'black'
-        } else if (enterOrLeave === 'leave') {
-            color = '#4d5df0'
+        console.log(`${whichBoard}, ${id}, ${this[whichBoard].ships[this.shipToPlace.type].size}, ${this.shipToPlace.orientation}`)
+        console.log(this.validateAddShip(whichBoard, id, this[whichBoard].ships[this.shipToPlace.type].size, this.shipToPlace.orientation))
+        if (this.validateAddShip(whichBoard, id, this[whichBoard].ships[this.shipToPlace.type].size, this.shipToPlace.orientation)) {
+            let color = ''
+            if (enterOrLeave === 'enter') {
+                color = 'grey'
+            } else if (enterOrLeave === 'leave') {
+                if (this[whichBoard].cells[id].isWater) {
+                    color = '#4d5df0'
+                } else if (this[whichBoard].cells[id].isShip) {
+                    color = 'black'
+                }
+            }
+            let changeFactor = 0
+            if (this.shipToPlace.orientation === 'right') {
+                changeFactor = 1
+            } else if (this.shipToPlace.orientation === 'down') {
+                changeFactor = 10
+            }
+            let currentID = id
+            for (let i = 0; i < this[whichBoard].ships[this.shipToPlace.type].size; i++) {
+                document.getElementById(`${whichBoard}_${this[whichBoard].cells[currentID].id}`).style.backgroundColor = color
+                currentID += changeFactor
+            }
         }
-        let changeFactor = 0
-        if (this.shipToPlace.orientation === 'right') {
-            changeFactor = 1
-        } else if (this.shipToPlace.orientation === 'down') {
-            changeFactor = 10
-        }
-        let currentID = id
-        for (let i = 0; i < this[whichBoard].ships[this.shipToPlace.type].size; i++) {
-            document.getElementById(`${whichBoard}_${this[whichBoard].cells[currentID].id}`).style.backgroundColor = color
-            currentID += changeFactor
-        }
+
     }
     initShips(whichBoard){
         console.log(`running initShips`)
@@ -211,8 +221,8 @@ class Game {
         }
         if (this.mode === 'deployment' && whichBoard === 'playerBoard') {
             cell.addEventListener("click", this[whichBoard].cells[id].deployment)
-            //cell.addEventListener("mouseleave", this[whichBoard].cells[id].deploymentMouseLeave)
-            //cell.addEventListener("mouseenter", this[whichBoard].cells[id].deploymentMouseEnter)
+            cell.addEventListener("mouseleave", this[whichBoard].cells[id].deploymentMouseLeave)
+            cell.addEventListener("mouseenter", this[whichBoard].cells[id].deploymentMouseEnter)
         }
         parent.append(cell)
     }
@@ -313,12 +323,12 @@ class Game {
                     currentCellID += 1
                 }
             } else {
-                console.log(`returning false from ship placement validation`)
+                //console.log(`returning false from ship placement validation`)
                 return false
             }
 
             if (downOrRight === 'right' && Math.floor(cellsRightCheckSameRow[0] / 10) != Math.floor(cellsRightCheckSameRow[cellsRightCheckSameRow.length - 1] / 10)) {
-                console.log(`returning false from ship placement validation, not same row`)
+                //console.log(`returning false from ship placement validation, not same row`)
                 return false
             }
         }
@@ -343,14 +353,11 @@ class Game {
     }
     validateNearbyCellForShipPlacement(whichBoard, id) {
         if(id <= 0 || id >= 99) {
-            console.log(`returning true validating cell ${id} for ship placement - 1`)
             return true
         } else {
             if (this[whichBoard].cells[id].isWater && !this[whichBoard].cells[id].isShip) {
-                console.log(`returning true validating cell ${id} for ship placement - 2`)
                 return true
             } else {
-                console.log(`returning false validating cell ${id} for ship placement`)
                 return false
             }
         }
