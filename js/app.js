@@ -72,7 +72,6 @@ class Game {
                 },
                 deployment: () => {
                     this.addShip(this.shipToPlace.board, this[whichBoard].cells[i].id, this.shipToPlace.type, this.shipToPlace.orientation)
-                    this.mode = ''
                     document.querySelectorAll(`button.deploy_${this.shipToPlace.type}`).forEach(button => {
                         button.disabled = true
                     })
@@ -405,6 +404,7 @@ class Game {
                 button.disabled = true
             })
             this.mode = 'attack'
+            console.log(`setting game mode to ${this.mode}`)
             this.waitDeploymentDone = false
             this.updateAndRender()
         }
