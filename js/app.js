@@ -1,3 +1,38 @@
+const validationPatternGridBox = [
+    {
+        rowDelta: -1,
+        colDelta: -1
+    },
+    {
+        rowDelta: -1,
+        colDelta: 0
+    },
+    {
+        rowDelta: -1,
+        colDelta: 1
+    },
+    {
+        rowDelta: 0,
+        colDelta: -1
+    },
+    {
+        rowDelta: 0,
+        colDelta: 1
+    },
+    {
+        rowDelta: 1,
+        colDelta: -1
+    },
+    {
+        rowDelta: 1,
+        colDelta: 0
+    },
+    {
+        rowDelta: 1,
+        colDelta: 1
+    }
+]
+
 class Game {
     constructor(boardSideSize, cellSize) {
         this.boardSideSize = boardSideSize
@@ -31,9 +66,13 @@ class Game {
     }
     initBoard(whichBoard, initIsHidden) {
         console.log(`running initBoard`)
+        let row = 0
+        let col = 0  
         for (let i = 0; i < this.boardSideSize * this.boardSideSize; i++) {
             this[whichBoard].cells[i] = {
                 id: i,
+                row: row,
+                col: col,
                 contains: {},
                 isHit: false,
                 isSunk: false,
@@ -83,7 +122,30 @@ class Game {
                 deploymentMouseLeave: () => {
                     this.renderShipDuringDeployment(this.shipToPlace.board, this[whichBoard].cells[i].id, 'leave')
                 }
-            }  
+            }
+            col++
+            if (col > (this.boardSideSize - 1)) {
+                col = 0
+                row++
+            }
+        }
+    }
+    validateGrid(row, col) {
+        const validateArray = [row, col]
+        for (let i = 0; i < validateArray.length; i++){
+            if(validateArray[i] < 0 || validateArray[i] > this.boardSideSize - 1) {
+                return false
+            }
+        }
+        return true
+    }
+    convertGridToID(row, col) {
+        return (row * this.boardSideSize) + col
+    }
+    convertIDToGrid(id) {
+        return {
+            row: Math.floor(id / this.boardSideSize),
+            col: id % this.boardSideSize
         }
     }
     renderShipDuringDeployment(whichBoard, id, enterOrLeave){
@@ -340,11 +402,12 @@ class Game {
     }
     validateCellForShipPlacement(whichBoard, cellID) {
         if (cellID >= 0 && cellID <= 99 && this[whichBoard].cells[cellID].isWater && !this[whichBoard].cells[cellID].isShip) {
-            const validationPatternBox = [-11, -10, -9, -1, 1, 9, 10, 11]
             const nearbyCellsValidationArray = []
-            for (let i = 0; i < validationPatternBox.length; i++) {
-                const indexToTest = Number(cellID) + Number(validationPatternBox[i])
-                nearbyCellsValidationArray.push(this.validateNearbyCellForShipPlacement(whichBoard, indexToTest))
+            for (let i = 0; i < validationPatternGridBox.length; i++) {
+                const grid = this.convertIDToGrid(cellID)
+                const rowToValidate = grid.row + validationPatternGridBox[i].rowDelta
+                const colToValidate = grid.col + validationPatternGridBox[i].colDelta
+                nearbyCellsValidationArray.push(this.validateNearbyCellForShipPlacement(whichBoard, rowToValidate, colToValidate))
             }
             if (nearbyCellsValidationArray.indexOf(false) >= 0) {
                 return false
@@ -355,10 +418,13 @@ class Game {
             return false
         }
     }
-    validateNearbyCellForShipPlacement(whichBoard, id) {
-        if(id <= 0 || id >= 99) {
+    validateNearbyCellForShipPlacement(whichBoard, row, col) {
+        //console.log(`validate nearby cell called with ${whichBoard}, ${row}, ${col}`)
+        if(!this.validateGrid(row, col)) {
             return true
         } else {
+            const id = this.convertGridToID(row, col)
+            //console.log(`the id at this point is ${id}`)
             if (this[whichBoard].cells[id].isWater && !this[whichBoard].cells[id].isShip) {
                 return true
             } else {
@@ -479,7 +545,42 @@ class Game {
                 arrayOfAttackableCells.push(cell)
             }
         }
+        //console.log(`these cells are considered broadly attackable`)
+        //console.log(arrayOfAttackableCells)
         return arrayOfAttackableCells
+    }
+    getGoodTargetCells(whichBoard){
+        const arrayOfProspectiveGoodTargetCells = this.getAttackableCellsBroadly(whichBoard)
+        for (let i = 0; i < arrayOfProspectiveGoodTargetCells.length; i++) {
+            //console.log(`looking at cell ${arrayOfProspectiveGoodTargetCells[i]}`)
+            if(this.getCellIsNextToASunkShip(whichBoard, arrayOfProspectiveGoodTargetCells[i])) {
+                //console.log(`removing cell ${arrayOfProspectiveGoodTargetCells[i]}, is next to a sunken cell`)
+                delete arrayOfProspectiveGoodTargetCells[i]
+            }
+        }
+        const arrayOfGoodTargetCells = arrayOfProspectiveGoodTargetCells.filter(n => n)
+        //console.log(`these cells are considered good targets`)
+        //console.log(arrayOfGoodTargetCells)
+        return arrayOfGoodTargetCells
+    }
+    getCellIsNextToASunkShip(whichBoard, cell) {
+        const sunkCellsNearby = []
+        validationPatternGridBox.forEach(patternElement => {
+            const grid = this.convertIDToGrid(cell)
+            const prospectiveRow = grid.row + patternElement.rowDelta
+            const prospectiveCol = grid.col + patternElement.colDelta
+            if (this.validateGrid(prospectiveRow, prospectiveCol) ) {
+                const prospectiveCell = this.convertGridToID(prospectiveRow, prospectiveCol)
+                if (this[whichBoard].cells[prospectiveCell].isSunk) {
+                    sunkCellsNearby.push(prospectiveCell)
+                }
+            }
+        })
+        if (sunkCellsNearby.length === 0) {
+            return false
+        } else {
+            return true
+        }
     }
     getCellToAttack(whichBoard) {
         const searchPatternCross = [-10, -1, 1, 10]
@@ -503,11 +604,11 @@ class Game {
             }
             if (arrayOfAttackableCells.length === 0) {
                 console.log(`there are no squares that its reasonable to attack using stored data, returning to the broad profile`)
-                arrayOfAttackableCells = this.getAttackableCellsBroadly('playerBoard')
+                arrayOfAttackableCells = this.getGoodTargetCells('playerBoard')
             } 
 
         } else {
-            arrayOfAttackableCells = this.getAttackableCellsBroadly('playerBoard')
+            arrayOfAttackableCells = this.getGoodTargetCells('playerBoard')
             console.log(`computer is hunting randomly, taking into account all previous hits`)
 
         }
@@ -582,6 +683,7 @@ g.placeShipsRandomly('computerBoard')
 // End of Main Game Controller
 
 function getRandomElementFromArray(array) {
+    //console.log(`picking randomly from these values ${array}`)
     const randomIndex = Math.floor(Math.random() * array.length)
     return array[randomIndex]
 }
