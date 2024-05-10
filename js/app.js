@@ -391,7 +391,6 @@ class Game {
         } else {
             console.log(`the ship ${type} is placed and may not be placed again`)
         }
-
     }
     validateAddShip(whichBoard, startingCellID, size, downOrRight) {
         let currentCellID = Number(startingCellID)
@@ -405,10 +404,8 @@ class Game {
                     currentCellID += 1
                 }
             } else {
-                //console.log(`returning false from ship placement validation`)
                 return false
             }
-
             if (downOrRight === 'right' && Math.floor(cellsRightCheckSameRow[0] / 10) != Math.floor(cellsRightCheckSameRow[cellsRightCheckSameRow.length - 1] / 10)) {
                 //console.log(`returning false from ship placement validation, not same row`)
                 return false
