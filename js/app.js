@@ -33,6 +33,47 @@ const validationPatternGridBox = [
     }
 ]
 
+const searchPatternGridCross = [
+    {
+        rowDelta: -1,
+        colDelta: 0
+    },
+    {
+        rowDelta: 0,
+        colDelta: -1
+    },
+    {
+        rowDelta: 0,
+        colDelta: 1
+    },
+    {
+        rowDelta: 1,
+        colDelta: 0
+    },
+]
+
+const searchPatternGridVertical = [
+    {
+        rowDelta: -1,
+        colDelta: 0
+    },
+    {
+        rowDelta: 1,
+        colDelta: 0
+    },
+]
+
+const searchPatternGridHorizontal = [
+    {
+        rowDelta: 0,
+        colDelta: -1
+    },
+    {
+        rowDelta: 0,
+        colDelta: 1
+    },
+]
+
 class Game {
     constructor(boardSideSize, cellSize) {
         this.boardSideSize = boardSideSize
@@ -583,34 +624,29 @@ class Game {
         }
     }
     getCellToAttack(whichBoard) {
-        const searchPatternCross = [-10, -1, 1, 10]
-        const searchPatternVertical = [-10, 10]
-        const searchPatternHorizontal = [-1, 1]
         let arrayOfAttackableCells = []
         if (this.computerTarget.use){
             console.log(`computer player hunting narrowly for reasonable targets using stored target data`)
             console.log(this.computerTarget)
             if (this.computerTarget.directionCross) {
                 console.log(`the computer player has a single previous hit stored, using the cross search pattern.`)
-                arrayOfAttackableCells = this.getAttackableCellsUsingPattern(whichBoard, searchPatternCross)
+                arrayOfAttackableCells = this.getAttackableCellsUsingPattern(whichBoard, searchPatternGridCross)
             }
             if (this.computerTarget.directionVertical) {
                 console.log(`computer hunting for target using the vertical search profile`)
-                arrayOfAttackableCells = this.getAttackableCellsUsingPattern(whichBoard, searchPatternVertical)
+                arrayOfAttackableCells = this.getAttackableCellsUsingPattern(whichBoard, searchPatternGridVertical)
             }
             if (this.computerTarget.directionHorizontal) {
                 console.log(`computer hunting for target using the horizontal search profile`)
-                arrayOfAttackableCells = this.getAttackableCellsUsingPattern(whichBoard, searchPatternHorizontal)
+                arrayOfAttackableCells = this.getAttackableCellsUsingPattern(whichBoard, searchPatternGridHorizontal)
             }
             if (arrayOfAttackableCells.length === 0) {
                 console.log(`there are no squares that its reasonable to attack using stored data, returning to the broad profile`)
                 arrayOfAttackableCells = this.getGoodTargetCells('playerBoard')
-            } 
-
+            }
         } else {
             arrayOfAttackableCells = this.getGoodTargetCells('playerBoard')
             console.log(`computer is hunting randomly, taking into account all previous hits`)
-
         }
         return getRandomElementFromArray(arrayOfAttackableCells)
     }
@@ -618,8 +654,11 @@ class Game {
         const attackableCells = []
         this.computerTarget.cells.forEach(cellInTarget => {
             pattern.forEach(searchPatternElemenet => {
-                const idToTest = Number(cellInTarget) + Number(searchPatternElemenet)
-                if (idToTest >= 0 && idToTest < 100) {
+                const grid = this.convertIDToGrid(cellInTarget)
+                const rowToValidate = grid.row + searchPatternElemenet.rowDelta
+                const colToValidate = grid.col + searchPatternElemenet.colDelta
+                if (this.validateGrid(rowToValidate, colToValidate)) {
+                    const idToTest = this.convertGridToID(rowToValidate, colToValidate)
                     if (!this[whichBoard].cells[idToTest].isHit){
                         attackableCells.push(idToTest)
                     }
