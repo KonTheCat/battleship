@@ -33,6 +33,49 @@ const validationPatternGridBox = [
     }
 ]
 
+const searchPatternGridCross = [
+    {
+        rowDelta: -1,
+        colDelta: 0
+    },
+    {
+        rowDelta: 0,
+        colDelta: -1
+    },
+    {
+        rowDelta: 0,
+        colDelta: 1
+    },
+    {
+        rowDelta: 1,
+        colDelta: 0
+    },
+]
+
+const searchPatternGridVertical = [
+    {
+        rowDelta: -1,
+        colDelta: 0
+    },
+    {
+        rowDelta: 1,
+        colDelta: 0
+    },
+]
+
+const searchPatternGridHorizontal = [
+    {
+        rowDelta: 0,
+        colDelta: -1
+    },
+    {
+        rowDelta: 0,
+        colDelta: 1
+    },
+]
+
+const colorOfWater = '#4d5df0'
+
 class Game {
     constructor(boardSideSize, cellSize) {
         this.boardSideSize = boardSideSize
@@ -80,15 +123,6 @@ class Game {
                 isWater: true,
                 isShip: false,
                 isMouseEnterShipDeployment: false,
-                identify: () => {
-                    console.log(`I am cell ${this[whichBoard].cells[i].id}, my details are below.`)
-                    console.log(this[whichBoard].cells[i])
-                },
-                reveal: () => {
-                    console.log(`revealing cell with id ${this[whichBoard].cells[i].id}`)
-                    this[whichBoard].cells[i].isHidden = false
-                    this.updateAndRender()
-                },
                 attack: () => {
                     console.log(`attacking cell with id ${this[whichBoard].cells[i].id}`)
                     if (! this[whichBoard].cells[i].isHit) {
@@ -155,7 +189,7 @@ class Game {
                 color = 'grey'
             } else if (enterOrLeave === 'leave') {
                 if (this[whichBoard].cells[id].isWater) {
-                    color = '#4d5df0'
+                    color = colorOfWater
                 } else if (this[whichBoard].cells[id].isShip) {
                     color = 'black'
                 }
@@ -220,22 +254,22 @@ class Game {
         this.computerTarget.directionVertical = false
         this.computerTarget.directionCross = false
     }
-    renderBoard(whichBoard, noListner = false) {
+    renderBoard(whichBoard) {
         this[whichBoard].parent.innerHTML = ''
         this[whichBoard].parent.style.width = `${this.boardSideSize * (this.cellSize + 2)}px`
         this[whichBoard].parent.style.display = "flex"
         this[whichBoard].parent.style.flexWrap = "wrap"
         for (let cell in this[whichBoard].cells) {
-            this.renderBoardCell(whichBoard, this[whichBoard].parent, this[whichBoard].cells[cell].id, noListner)
+            this.renderBoardCell(whichBoard, this[whichBoard].parent, this[whichBoard].cells[cell].id)
         }
     }
-    renderBoardCell(whichBoard, parent, id, noListner = false, style = "1px solid black") {
+    renderBoardCell(whichBoard, parent, id, style = "1px solid black") {
         const cell = document.createElement("div")
         if (this[whichBoard].cells[id].isShip) {
             cell.style.backgroundColor = 'black'
         }
         if (this[whichBoard].cells[id].isWater) {
-            cell.style.backgroundColor = '#4d5df0'
+            cell.style.backgroundColor = colorOfWater
         }
         if (this[whichBoard].cells[id].isHidden) {
             cell.style.backgroundColor = 'white'
@@ -254,32 +288,14 @@ class Game {
             cell.innerHTML = 'M'
             cell.style.color = 'black'
         }
-        if (this[whichBoard].cells[id].isMouseEnterShipDeployment){
-            cell.style.backgroundColor = 'black'
-            cell.style.opacity = '0.8'
-        }
         cell.style.height = `${this.cellSize}px`
         cell.style.width = `${this.cellSize}px`
         cell.style.border = style
         cell.id = `${whichBoard}_${id}`
         cell.className = `${whichBoard}_cell`
-        if(! noListner) {
-            switch (this.mode) {
-                case 'inspect':
-                    cell.addEventListener("click", this[whichBoard].cells[id].identify)
-                    break
-                case 'reveal':
-                    cell.addEventListener("click", this[whichBoard].cells[id].reveal)
-                    break
-                case 'attack':
-                    cell.addEventListener("click", this[whichBoard].cells[id].attack)
-                    cell.addEventListener("mouseover", this[whichBoard].cells[id].attackMouseOver)
-                    break
-                case 'over':
-                    break
-                default:
-                    break;
-            }
+        if(this.mode === 'attack' && whichBoard === 'computerBoard') {
+            cell.addEventListener("click", this[whichBoard].cells[id].attack)
+            cell.addEventListener("mouseover", this[whichBoard].cells[id].attackMouseOver)
         }
         if (this.mode === 'deployment' && whichBoard === 'playerBoard') {
             cell.addEventListener("click", this[whichBoard].cells[id].deployment)
@@ -375,7 +391,6 @@ class Game {
         } else {
             console.log(`the ship ${type} is placed and may not be placed again`)
         }
-
     }
     validateAddShip(whichBoard, startingCellID, size, downOrRight) {
         let currentCellID = Number(startingCellID)
@@ -389,10 +404,8 @@ class Game {
                     currentCellID += 1
                 }
             } else {
-                //console.log(`returning false from ship placement validation`)
                 return false
             }
-
             if (downOrRight === 'right' && Math.floor(cellsRightCheckSameRow[0] / 10) != Math.floor(cellsRightCheckSameRow[cellsRightCheckSameRow.length - 1] / 10)) {
                 //console.log(`returning false from ship placement validation, not same row`)
                 return false
@@ -459,7 +472,7 @@ class Game {
         this.updateShipsStatus('computerBoard')
         this.checkPlayerShipDeployment()
         this.checkVictory()
-        this.renderBoard('playerBoard', true)
+        this.renderBoard('playerBoard')
         this.renderBoard('computerBoard')
         this.renderUI()
     }
@@ -583,34 +596,29 @@ class Game {
         }
     }
     getCellToAttack(whichBoard) {
-        const searchPatternCross = [-10, -1, 1, 10]
-        const searchPatternVertical = [-10, 10]
-        const searchPatternHorizontal = [-1, 1]
         let arrayOfAttackableCells = []
         if (this.computerTarget.use){
             console.log(`computer player hunting narrowly for reasonable targets using stored target data`)
             console.log(this.computerTarget)
             if (this.computerTarget.directionCross) {
                 console.log(`the computer player has a single previous hit stored, using the cross search pattern.`)
-                arrayOfAttackableCells = this.getAttackableCellsUsingPattern(whichBoard, searchPatternCross)
+                arrayOfAttackableCells = this.getAttackableCellsUsingPattern(whichBoard, searchPatternGridCross)
             }
             if (this.computerTarget.directionVertical) {
                 console.log(`computer hunting for target using the vertical search profile`)
-                arrayOfAttackableCells = this.getAttackableCellsUsingPattern(whichBoard, searchPatternVertical)
+                arrayOfAttackableCells = this.getAttackableCellsUsingPattern(whichBoard, searchPatternGridVertical)
             }
             if (this.computerTarget.directionHorizontal) {
                 console.log(`computer hunting for target using the horizontal search profile`)
-                arrayOfAttackableCells = this.getAttackableCellsUsingPattern(whichBoard, searchPatternHorizontal)
+                arrayOfAttackableCells = this.getAttackableCellsUsingPattern(whichBoard, searchPatternGridHorizontal)
             }
             if (arrayOfAttackableCells.length === 0) {
                 console.log(`there are no squares that its reasonable to attack using stored data, returning to the broad profile`)
                 arrayOfAttackableCells = this.getGoodTargetCells('playerBoard')
-            } 
-
+            }
         } else {
             arrayOfAttackableCells = this.getGoodTargetCells('playerBoard')
             console.log(`computer is hunting randomly, taking into account all previous hits`)
-
         }
         return getRandomElementFromArray(arrayOfAttackableCells)
     }
@@ -618,8 +626,11 @@ class Game {
         const attackableCells = []
         this.computerTarget.cells.forEach(cellInTarget => {
             pattern.forEach(searchPatternElemenet => {
-                const idToTest = Number(cellInTarget) + Number(searchPatternElemenet)
-                if (idToTest >= 0 && idToTest < 100) {
+                const grid = this.convertIDToGrid(cellInTarget)
+                const rowToValidate = grid.row + searchPatternElemenet.rowDelta
+                const colToValidate = grid.col + searchPatternElemenet.colDelta
+                if (this.validateGrid(rowToValidate, colToValidate)) {
+                    const idToTest = this.convertGridToID(rowToValidate, colToValidate)
                     if (!this[whichBoard].cells[idToTest].isHit){
                         attackableCells.push(idToTest)
                     }
@@ -629,25 +640,16 @@ class Game {
         return attackableCells
     } 
     checkVictory() {
-        if (this.checkIfAllShipsSunk('playerBoard')) {
+        if (this.checkAllShipsStatus('playerBoard', 'isSunk')) {
             this.playerWon = false
             this.mode = 'over'
             console.log(`all player ships sunk, computer wins`)
         }
-        if (this.checkIfAllShipsSunk('computerBoard')) {
+        if (this.checkAllShipsStatus('computerBoard', 'isSunk')) {
             this.playerWon = true
             this.mode = 'over'
             console.log(`all computer ships sunk, player wins`)
         }
-    }
-    checkIfAllShipsSunk(whichBoard) {
-        let sunkShipCounter = 0
-        for (let ship in this[whichBoard].ships) {
-            if (this[whichBoard].ships[ship].isSunk) {
-                sunkShipCounter ++
-            }
-        }
-        return sunkShipCounter === 5
     }
     checkAllShipsStatus(whichBoard, status) {
         let shipCounter = 0
@@ -656,7 +658,7 @@ class Game {
                 shipCounter ++
             }
         }
-        return shipCounter === 5
+        return shipCounter === Object.keys(this[whichBoard].ships).length
     }
     unhideBoard(whichBoard){
         for (let cell in this[whichBoard].cells) {
