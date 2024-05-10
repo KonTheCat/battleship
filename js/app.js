@@ -668,25 +668,16 @@ class Game {
         return attackableCells
     } 
     checkVictory() {
-        if (this.checkIfAllShipsSunk('playerBoard')) {
+        if (this.checkAllShipsStatus('playerBoard', 'isSunk')) {
             this.playerWon = false
             this.mode = 'over'
             console.log(`all player ships sunk, computer wins`)
         }
-        if (this.checkIfAllShipsSunk('computerBoard')) {
+        if (this.checkAllShipsStatus('computerBoard', 'isSunk')) {
             this.playerWon = true
             this.mode = 'over'
             console.log(`all computer ships sunk, player wins`)
         }
-    }
-    checkIfAllShipsSunk(whichBoard) {
-        let sunkShipCounter = 0
-        for (let ship in this[whichBoard].ships) {
-            if (this[whichBoard].ships[ship].isSunk) {
-                sunkShipCounter ++
-            }
-        }
-        return sunkShipCounter === 5
     }
     checkAllShipsStatus(whichBoard, status) {
         let shipCounter = 0
@@ -695,7 +686,7 @@ class Game {
                 shipCounter ++
             }
         }
-        return shipCounter === 5
+        return shipCounter === Object.keys(this[whichBoard].ships).length
     }
     unhideBoard(whichBoard){
         for (let cell in this[whichBoard].cells) {
