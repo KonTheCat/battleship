@@ -1,8 +1,45 @@
 body {
-    margin: 0;
+    margin-left: 50px;
     padding: 0;
+    display: grid;
+    grid-template-areas: 
+    "head head head"
+    "controls none game_status"
+    "playerBoard ship_buttons log"
+    "computerBoard ship_buttons log";
+    grid-template-columns: fit-content(10%) .2fr;
+    grid-template-rows: auto;
 }
 
-#player_board_container, #computer_board_container {
-    margin: 50px;
+#header {
+    grid-area: head;
+}
+
+#control_buttons {
+    grid-area: controls;
+}
+
+#ship_deployment_buttons {
+    grid-area: ship_buttons;
+}
+
+#game_status{
+    grid-area: game_status;
+}
+
+#player_board_container {
+    grid-area: playerBoard;
+}
+
+#computer_board_container {
+    grid-area: computerBoard;
+}
+
+#log_container{
+    grid-area: log;
+}
+
+#log {
+    overflow-y:auto;
+    max-height: 900px;
 }
