@@ -106,11 +106,36 @@ class Game {
             cells: {},
             ships: {}
         }
+        this.log = {
+            parent: document.getElementById('log'),
+            entries: []
+        }
+    }
+    writeLog(source, message) {
+        this.log.entries.push(
+            {
+                source: source,
+                message: message
+            }
+        )
+    }
+    renderLog() {
+        this.log.parent.innerHTML = ''
+        this.log.entries.forEach(entry => {
+            const entryElement = document.createElement('p')
+            const sourceElemenet = document.createElement('span')
+            sourceElemenet.style.fontWeight = 'bolder'
+            sourceElemenet.innerHTML = `${entry.source}: `
+            const messageElemenet = document.createElement('span')
+            messageElemenet.innerHTML = `${entry.message}`
+            entryElement.appendChild(sourceElemenet)
+            entryElement.appendChild(messageElemenet)
+            this.log.parent.prepend(entryElement)
+        })
     }
     initBoard(whichBoard, initIsHidden) {
-        console.log(`running initBoard`)
         let row = 0
-        let col = 0  
+        let col = 0
         for (let i = 0; i < this.boardSideSize * this.boardSideSize; i++) {
             this[whichBoard].cells[i] = {
                 id: i,
@@ -124,22 +149,18 @@ class Game {
                 isShip: false,
                 isMouseEnterShipDeployment: false,
                 attack: () => {
-                    console.log(`attacking cell with id ${this[whichBoard].cells[i].id}`)
                     if (! this[whichBoard].cells[i].isHit) {
                         this[whichBoard].cells[i].isHit = true
-                        if (this[whichBoard].cells[i].isShip){
+                        if (this[whichBoard].cells[i].isShip){   
                             const hitShipKey = Object.keys(this[whichBoard].cells[i].contains)
                             this[whichBoard].ships[hitShipKey].cells[this[whichBoard].cells[i].id].isHit = true
-                            console.log(`You have hit a ship, it is a ${hitShipKey}. The status of this ship is returned below`)
-                            console.log(this[whichBoard].ships[hitShipKey])
+                            this.writeLog('Player', 'You have hit a computer ship!')
                         } else if (this[whichBoard].cells[i].isWater) {
-                            console.log(`You have hit a water`)
+                            this.writeLog('Player', 'You have hit water.')
                             this.isComputerTurn = true
                             this.runComputerTurn()
                         }
                         this[whichBoard].cells[i].isHidden = false
-                    } else {
-                        console.log(`cell was already attacked`)
                     }
                     this.updateAndRender()
                 },
@@ -208,7 +229,6 @@ class Game {
         }
     }
     initShips(whichBoard){
-        console.log(`running initShips`)
         const ships = {
             carrier: {size: 5, cells: {}, isSunk: false, isPlaced: false},
             battleship: {size: 4, cells: {}, isSunk: false, isPlaced: false},
@@ -235,13 +255,13 @@ class Game {
                 } 
             }
             if (intactCellsInShip === 0) {
-                console.log(`The ${ship} on ${whichBoard} is sunk`)
+                this.writeLog('System', `The ${ship} on ${whichBoard} is sunk`)
                 this[whichBoard].ships[ship].isSunk = true
                 for (let cell in this[whichBoard].ships[ship].cells) {
                     this[whichBoard].cells[cell].isSunk = true
                 }
                 if(whichBoard === 'playerBoard') {
-                    console.log(`sunk a ship on the player board, clearing computer target data`)
+                    this.writeLog('Computer', 'Since I have sunk one of your ships I now erase my target data and return to the hunt.')
                     this.clearComputerTarget()
                 }
             }
@@ -275,17 +295,19 @@ class Game {
             cell.style.backgroundColor = 'white'
         } 
         if (this[whichBoard].cells[id].isHit) {
-            cell.innerHTML = 'H'
+            cell.innerHTML = '<p>H</p>'
             cell.style.color = 'red'
             cell.style.fontWeight = 'bolder'
-            cell.style.alignContent = 'center'
+            cell.style.display = 'flex'
+            cell.style.justifyContent = 'center'
+            cell.style.alignItems = 'center'
             cell.style.fontSize = `${this.cellSize * .75}px`
         }
         if (this[whichBoard].cells[id].isSunk) {
-            cell.innerHTML = 'S'
+            cell.innerHTML = '<p>S</p>'
         }
         if (this[whichBoard].cells[id].isHit && this[whichBoard].cells[id].isWater){
-            cell.innerHTML = 'M'
+            cell.innerHTML = '<p>M</p>'
             cell.style.color = 'black'
         }
         cell.style.height = `${this.cellSize}px`
@@ -321,7 +343,6 @@ class Game {
         randomPlayerShipDeploymentButton.classList.add(`deploy`)
         randomPlayerShipDeploymentButton.addEventListener('click', () => {
             this.mode = 'deployment'
-            console.log(`Game mode set to ${this.mode}`)
             this.placeShipsRandomly('playerBoard')
             this.updateAndRender()
             document.querySelectorAll(`button.deploy`).forEach(button => {
@@ -351,7 +372,6 @@ class Game {
                     this.shipToPlace.board = 'playerBoard'
                     this.shipToPlace.type = ship
                     this.shipToPlace.orientation = orientation.code
-                    console.log(`Game mode set to ${this.mode}`)
                     this.updateAndRender()
                 })
                 parent.appendChild(newButton)
@@ -359,7 +379,6 @@ class Game {
         }
     }
     addShip(whichBoard, startingCellID, type, downOrRight){
-        console.log(`adding ship ${whichBoard}, ${startingCellID}, ${type}, ${downOrRight}`)
         if(! this[whichBoard].ships[type].isPlaced) {
             const size = this[whichBoard].ships[type].size
             if (this.validateAddShip(whichBoard, startingCellID, size, downOrRight)) {
@@ -381,17 +400,12 @@ class Game {
                         button.disabled = true
                     })
                     this.mode = 'null'
-                    console.log(`setting game mode to ${this.mode}`)
                 }
                 this.updateAndRender()
-                console.log(`added ship ${whichBoard}, ${startingCellID}, ${type}, ${downOrRight}`)
-            } else {
-                console.log(`Adding ship failed, validation failure. Request was for board ${whichBoard}, cell ${startingCellID}, type ${type}, downOrRight ${downOrRight}`)
             }
-        } else {
-            console.log(`the ship ${type} is placed and may not be placed again`)
         }
     }
+    
     validateAddShip(whichBoard, startingCellID, size, downOrRight) {
         let currentCellID = Number(startingCellID)
         const cellsRightCheckSameRow = []
@@ -407,7 +421,6 @@ class Game {
                 return false
             }
             if (downOrRight === 'right' && Math.floor(cellsRightCheckSameRow[0] / 10) != Math.floor(cellsRightCheckSameRow[cellsRightCheckSameRow.length - 1] / 10)) {
-                //console.log(`returning false from ship placement validation, not same row`)
                 return false
             }
         }
@@ -432,12 +445,10 @@ class Game {
         }
     }
     validateNearbyCellForShipPlacement(whichBoard, row, col) {
-        //console.log(`validate nearby cell called with ${whichBoard}, ${row}, ${col}`)
         if(!this.validateGrid(row, col)) {
             return true
         } else {
             const id = this.convertGridToID(row, col)
-            //console.log(`the id at this point is ${id}`)
             if (this[whichBoard].cells[id].isWater && !this[whichBoard].cells[id].isShip) {
                 return true
             } else {
@@ -462,7 +473,6 @@ class Game {
             }
         }
         if (cellsForShipPlacement.length === 0) {
-            console.log(`no valid cells for ship placement`)
             return
         }
         return getRandomElementFromArray(cellsForShipPlacement)
@@ -475,6 +485,7 @@ class Game {
         this.renderBoard('playerBoard')
         this.renderBoard('computerBoard')
         this.renderUI()
+        this.renderLog()
     }
     renderUI() {
         const gameStatus = document.getElementById('game_status')
@@ -486,55 +497,45 @@ class Game {
     }
     checkPlayerShipDeployment(){
         if (this.checkAllShipsStatus('playerBoard', 'isPlaced') && this.waitDeploymentDone) {
-            console.log(`player ship deployment done`)
+            this.writeLog('System', 'Player ship deployment finished, the battle begins!')
             document.querySelectorAll(`button.deploy`).forEach(button => {
                 button.disabled = true
             })
+            document.getElementById('ship_deployment_buttons').style.display = "none"
+            document.getElementById('log_container').style.display = "block"
             this.mode = 'attack'
-            console.log(`setting game mode to ${this.mode}`)
             this.waitDeploymentDone = false
             this.updateAndRender()
         }
     }
     updateComputerTarget() {
         if (this.computerTarget.cells.length < 3 && this.computerTarget.use) {
-            console.log('we have enough data to set a target direction, but not so much as to make a mess of it')
             if (this.computerTarget.cells.length === 2 && this.computerTarget.directionVertical === false && this.computerTarget.directionHorizontal === false) {
                 const cellComparisonResult = this.computerTarget.cells[0] - this.computerTarget.cells[1]
                 if (cellComparisonResult === -10 || cellComparisonResult === 10) {
-                    console.log(`comparison result is ${cellComparisonResult} setting computer target direction to vertical`)
+                    this.writeLog('Computer', 'I now know enough to hunt for this ship in the vertical!')
                     this.computerTarget.directionVertical = true
                     this.computerTarget.directionCross = false
                 } else if (cellComparisonResult === 1 || cellComparisonResult === -1) {
-                    console.log(`comparison result is ${cellComparisonResult} setting computer target direction to horizontal`)
+                    this.writeLog('Computer', 'I now know enough to hunt for this ship in the horizontal!')
                     this.computerTarget.directionHorizontal = true
                     this.computerTarget.directionCross = false
-                } else {
-                    console.log(`unable to set computer target direction based on cell comparison result of ${cellComparisonResult}`)
-                    console.log(this.computerTarget)
                 }
             } else if (this.computerTarget.cells.length === 1) {
-                console.log('setting computer target direction to cross')
+                this.writeLog('Computer', "There's a whole ship around here somewhere!")
                 this.computerTarget.directionCross = true
-            } else {
-                console.log(`unable to set computer target direction based on available data`)
-                console.log(this.computerTarget)
             }
-        } else {
-            console.log(`we do not bother setting the computer target direction at this time`)
-        } 
-        
+        }
     }
     runComputerTurn() {
-        console.log(`Computer taking a turn.`)
+        this.writeLog(`Computer`, 'My turn now!')
         this.computerAttackCell()
         this.isComputerTurn = false
     }
     computerAttackCell(){
         const idOfCellToAttack = this.getCellToAttack('playerBoard')
-        console.log(`Computer attacking cell ${idOfCellToAttack}`)
         if (this['playerBoard'].cells[idOfCellToAttack].isShip) {
-            console.log(`computer hit ship at cell ${idOfCellToAttack}, computer goes again`)
+            this.writeLog(`Computer`, 'I have hit a ship, I go again!')
             this['playerBoard'].cells[idOfCellToAttack].isHit = true
             const hitShipKey = Object.keys(this['playerBoard'].cells[idOfCellToAttack].contains)
             this['playerBoard'].ships[hitShipKey].cells[this['playerBoard'].cells[idOfCellToAttack].id].isHit = true
@@ -547,7 +548,7 @@ class Game {
         }
         if (this['playerBoard'].cells[idOfCellToAttack].isWater) {
             this['playerBoard'].cells[idOfCellToAttack].isHit = true
-            console.log('computer hit water')
+            this.writeLog(`Computer`, 'I have hit water, for now.')
             this.updateAndRender()
         }
     }
@@ -558,22 +559,16 @@ class Game {
                 arrayOfAttackableCells.push(cell)
             }
         }
-        //console.log(`these cells are considered broadly attackable`)
-        //console.log(arrayOfAttackableCells)
         return arrayOfAttackableCells
     }
     getGoodTargetCells(whichBoard){
         const arrayOfProspectiveGoodTargetCells = this.getAttackableCellsBroadly(whichBoard)
         for (let i = 0; i < arrayOfProspectiveGoodTargetCells.length; i++) {
-            //console.log(`looking at cell ${arrayOfProspectiveGoodTargetCells[i]}`)
             if(this.getCellIsNextToASunkShip(whichBoard, arrayOfProspectiveGoodTargetCells[i])) {
-                //console.log(`removing cell ${arrayOfProspectiveGoodTargetCells[i]}, is next to a sunken cell`)
                 delete arrayOfProspectiveGoodTargetCells[i]
             }
         }
         const arrayOfGoodTargetCells = arrayOfProspectiveGoodTargetCells.filter(n => n)
-        //console.log(`these cells are considered good targets`)
-        //console.log(arrayOfGoodTargetCells)
         return arrayOfGoodTargetCells
     }
     getCellIsNextToASunkShip(whichBoard, cell) {
@@ -598,27 +593,20 @@ class Game {
     getCellToAttack(whichBoard) {
         let arrayOfAttackableCells = []
         if (this.computerTarget.use){
-            console.log(`computer player hunting narrowly for reasonable targets using stored target data`)
-            console.log(this.computerTarget)
             if (this.computerTarget.directionCross) {
-                console.log(`the computer player has a single previous hit stored, using the cross search pattern.`)
                 arrayOfAttackableCells = this.getAttackableCellsUsingPattern(whichBoard, searchPatternGridCross)
             }
             if (this.computerTarget.directionVertical) {
-                console.log(`computer hunting for target using the vertical search profile`)
                 arrayOfAttackableCells = this.getAttackableCellsUsingPattern(whichBoard, searchPatternGridVertical)
             }
             if (this.computerTarget.directionHorizontal) {
-                console.log(`computer hunting for target using the horizontal search profile`)
                 arrayOfAttackableCells = this.getAttackableCellsUsingPattern(whichBoard, searchPatternGridHorizontal)
             }
             if (arrayOfAttackableCells.length === 0) {
-                console.log(`there are no squares that its reasonable to attack using stored data, returning to the broad profile`)
                 arrayOfAttackableCells = this.getGoodTargetCells('playerBoard')
             }
         } else {
             arrayOfAttackableCells = this.getGoodTargetCells('playerBoard')
-            console.log(`computer is hunting randomly, taking into account all previous hits`)
         }
         return getRandomElementFromArray(arrayOfAttackableCells)
     }
@@ -643,12 +631,10 @@ class Game {
         if (this.checkAllShipsStatus('playerBoard', 'isSunk')) {
             this.playerWon = false
             this.mode = 'over'
-            console.log(`all player ships sunk, computer wins`)
         }
         if (this.checkAllShipsStatus('computerBoard', 'isSunk')) {
             this.playerWon = true
             this.mode = 'over'
-            console.log(`all computer ships sunk, player wins`)
         }
     }
     checkAllShipsStatus(whichBoard, status) {
@@ -685,7 +671,6 @@ g.placeShipsRandomly('computerBoard')
 // End of Main Game Controller
 
 function getRandomElementFromArray(array) {
-    //console.log(`picking randomly from these values ${array}`)
     const randomIndex = Math.floor(Math.random() * array.length)
     return array[randomIndex]
 }
