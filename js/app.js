@@ -93,7 +93,10 @@ const freeSpaceDetectionPattern = [
     }
 ]
 
-const colorOfWater = '#4d5df0'
+const colorOfWater = 'rgba(77, 93, 240, 0.6)'
+const colorOfHidden = 'rgba(255,255,255, 0.6)'
+const colorOfShip = 'rgba(0, 0, 0, 0.6)'
+const colorOfDeployment = 'rgba(0.5, 0.5, 0.5, 0.6)'
 
 class Game {
     constructor(boardSideSize, cellSize) {
@@ -226,12 +229,12 @@ class Game {
         if (this.validateAddShip(whichBoard, id, this[whichBoard].ships[this.shipToPlace.type].size, this.shipToPlace.orientation)) {
             let color = ''
             if (enterOrLeave === 'enter') {
-                color = 'grey'
+                color = colorOfDeployment
             } else if (enterOrLeave === 'leave') {
                 if (this[whichBoard].cells[id].isWater) {
                     color = colorOfWater
                 } else if (this[whichBoard].cells[id].isShip) {
-                    color = 'black'
+                    color = colorOfShip
                 }
             }
             let changeFactor = 0
@@ -306,13 +309,13 @@ class Game {
     renderBoardCell(whichBoard, parent, id, style = "1px solid black") {
         const cell = document.createElement("div")
         if (this[whichBoard].cells[id].isShip) {
-            cell.style.backgroundColor = 'black'
+            cell.style.backgroundColor = colorOfShip
         }
         if (this[whichBoard].cells[id].isWater) {
             cell.style.backgroundColor = colorOfWater
         }
         if (this[whichBoard].cells[id].isHidden) {
-            cell.style.backgroundColor = 'white'
+            cell.style.backgroundColor = colorOfHidden
         } 
         if (this[whichBoard].cells[id].isHit) {
             cell.innerHTML = '<p>H</p>'

@@ -1,6 +1,13 @@
 body {
-    margin-left: 50px;
+    margin: 50px;
     padding: 0;
+    background-image: url(/media/background.png);
+    background-color: black;
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
+#ui {
     display: grid;
     grid-template-areas: 
     "head head head"
@@ -9,6 +16,16 @@ body {
     "computerBoard ship_buttons log";
     grid-template-columns: fit-content(10%) .2fr;
     grid-template-rows: auto;
+    background-color: rgba(128, 0, 128, 0.8);
+    color: beige;
+    max-width: fit-content;
+    max-height: fit-content;
+    border: 8px double black;
+} 
+
+#ui > * {
+    margin-left: 20px;
+    margin-right: 20px;
 }
 
 #header {
@@ -33,6 +50,7 @@ body {
 
 #computer_board_container {
     grid-area: computerBoard;
+    margin-bottom: 20px;
 }
 
 #log_container{
