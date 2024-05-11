@@ -275,6 +275,7 @@ class Game {
             }
             if (intactCellsInShip === 0) {
                 this.writeLog('System', `The ${ship} on ${whichBoard} is sunk`)
+                this.checkVictory()
                 this[whichBoard].ships[ship].isSunk = true
                 for (let cell in this[whichBoard].ships[ship].cells) {
                     this[whichBoard].cells[cell].isSunk = true
@@ -562,8 +563,10 @@ class Game {
             this.computerTarget.cells.push(idOfCellToAttack)
             this.updateAndRender()
             this.updateComputerTarget()
-            this.computerAttackCell()
-            this.updateAndRender()
+            if (this.state !== 'over') {
+                this.computerAttackCell()
+                this.updateAndRender()
+            }
         }
         if (this['playerBoard'].cells[idOfCellToAttack].isWater) {
             this['playerBoard'].cells[idOfCellToAttack].isHit = true
@@ -685,15 +688,17 @@ class Game {
         return attackableCells
     } 
     checkVictory() {
-        if (this.checkAllShipsStatus('playerBoard', 'isSunk')) {
-            this.playerWon = false
-            this.mode = 'over'
-            this.writeLog('System', 'Computer wins!')
-        }
-        if (this.checkAllShipsStatus('computerBoard', 'isSunk')) {
-            this.playerWon = true
-            this.mode = 'over'
-            this.writeLog('System', 'Player wins!')
+        if (this.mode !== 'over') {
+            if (this.checkAllShipsStatus('playerBoard', 'isSunk')) {
+                this.playerWon = false
+                this.mode = 'over'
+                this.writeLog('System', 'Computer wins!')
+            }
+            if (this.checkAllShipsStatus('computerBoard', 'isSunk')) {
+                this.playerWon = true
+                this.mode = 'over'
+                this.writeLog('System', 'Player wins!')
+            }
         }
     }
     checkAllShipsStatus(whichBoard, status) {
