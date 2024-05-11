@@ -74,6 +74,25 @@ const searchPatternGridHorizontal = [
     },
 ]
 
+const freeSpaceDetectionPattern = [
+    {
+        rowDelta: 1,
+        colDelta: 0
+    },
+    {
+        rowDelta: -1,
+        colDelta: 0
+    },
+    {
+        rowDelta: 0,
+        colDelta: 1
+    },
+    {
+        rowDelta: 0,
+        colDelta: -1
+    }
+]
+
 const colorOfWater = '#4d5df0'
 
 class Game {
@@ -571,6 +590,44 @@ class Game {
         const arrayOfGoodTargetCells = arrayOfProspectiveGoodTargetCells.filter(n => n)
         return arrayOfGoodTargetCells
     }
+    getBetterTargetCell(whichBoard) {
+        const arrayOfGoodTargetCells = this.getGoodTargetCells(whichBoard)
+        const arrayOfCellsWithFreeSpace = []
+        arrayOfGoodTargetCells.forEach(cellElemenet => {
+            arrayOfCellsWithFreeSpace.push({
+                id: cellElemenet,
+                freeSpace: this.getCellFreeSpaceUsingGrid(whichBoard, cellElemenet)
+            })
+        })
+        arrayOfCellsWithFreeSpace.sort((a, b) => b.freeSpace - a.freeSpace)
+        const arrayOfCellsWithMostFreeSpace = arrayOfCellsWithFreeSpace.slice(0, Math.floor(arrayOfCellsWithFreeSpace.length / 4))
+        const arrayOfBetterTargetCells = [] 
+        arrayOfCellsWithMostFreeSpace.forEach(element => {
+            arrayOfBetterTargetCells.push(element.id)
+        })
+        return arrayOfBetterTargetCells
+    }
+    getCellFreeSpaceUsingGrid(whichBoard, id) {
+        let freeSpace = 0
+        freeSpaceDetectionPattern.forEach(patternElement => {
+            let currentCellID = id
+            while (! this[whichBoard].cells[currentCellID].isHit) {
+                freeSpace ++
+                let currentGrid = this.convertIDToGrid(currentCellID)
+                currentGrid.col += patternElement.colDelta
+                currentGrid.row += patternElement.rowDelta
+                if (this.validateGrid(currentGrid.row, currentGrid.col)) {
+                    currentCellID = this.convertGridToID(currentGrid.row, currentGrid.col)
+                    if(!(currentCellID >= 0 && currentCellID <= 99)) {
+                        break
+                    }
+                } else {
+                    break
+                }                
+            }
+        })
+        return freeSpace
+    }
     getCellIsNextToASunkShip(whichBoard, cell) {
         const sunkCellsNearby = []
         validationPatternGridBox.forEach(patternElement => {
@@ -603,10 +660,10 @@ class Game {
                 arrayOfAttackableCells = this.getAttackableCellsUsingPattern(whichBoard, searchPatternGridHorizontal)
             }
             if (arrayOfAttackableCells.length === 0) {
-                arrayOfAttackableCells = this.getGoodTargetCells('playerBoard')
+                arrayOfAttackableCells = this.getBetterTargetCell('playerBoard')
             }
         } else {
-            arrayOfAttackableCells = this.getGoodTargetCells('playerBoard')
+            arrayOfAttackableCells = this.getBetterTargetCell('playerBoard')
         }
         return getRandomElementFromArray(arrayOfAttackableCells)
     }
@@ -631,10 +688,12 @@ class Game {
         if (this.checkAllShipsStatus('playerBoard', 'isSunk')) {
             this.playerWon = false
             this.mode = 'over'
+            this.writeLog('System', 'Computer wins!')
         }
         if (this.checkAllShipsStatus('computerBoard', 'isSunk')) {
             this.playerWon = true
             this.mode = 'over'
+            this.writeLog('System', 'Player wins!')
         }
     }
     checkAllShipsStatus(whichBoard, status) {
