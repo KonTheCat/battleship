@@ -16,7 +16,7 @@ body {
     "computerBoard ship_buttons log";
     grid-template-columns: fit-content(10%) .2fr;
     grid-template-rows: auto;
-    background-color: rgba(128, 0, 128, 0.8);
+    background-color: rgba(128, 0, 128, 0.6);
     color: beige;
     max-width: fit-content;
     max-height: fit-content;

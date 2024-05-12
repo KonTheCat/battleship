@@ -120,11 +120,13 @@ class Game {
         }
         this.playerBoard = {
             parent: document.getElementById('player_board'),
+            displayName: 'Player Board',
             cells: {},
             ships: {}
         }
         this.computerBoard = {
             parent: document.getElementById('computer_board'),
+            displayName: 'Computer Board',
             cells: {},
             ships: {}
         }
@@ -132,6 +134,8 @@ class Game {
             parent: document.getElementById('log'),
             entries: []
         }
+        this.soundtrack = new Audio('media/girlsUndPanzerOST.mp3')
+        this.soundtrackPaused = true 
     }
     writeLog(source, message) {
         this.log.entries.push(
@@ -277,7 +281,7 @@ class Game {
                 } 
             }
             if (intactCellsInShip === 0) {
-                this.writeLog('System', `The ${ship} on ${whichBoard} is sunk`)
+                this.writeLog('System', `The ${ship} on ${this[whichBoard].displayName} is sunk`)
                 this.checkVictory()
                 this[whichBoard].ships[ship].isSunk = true
                 for (let cell in this[whichBoard].ships[ship].cells) {
@@ -351,12 +355,36 @@ class Game {
     }
     renderControlButtons(){
         const parent = document.getElementById('control_buttons')
+        parent.innerHTML = ''
+
         const resetButton = document.createElement('button')
         resetButton.innerHTML = '<h4>Reset Game</h4>'
         resetButton.addEventListener('click', () => {
             location.reload()
         })
         parent.appendChild(resetButton)
+
+        const soundtrackButton = document.createElement('button')
+        let onClick = ''
+        let soundtrackButtonContent = ''
+        if (this.soundtrackPaused) {
+            soundtrackButtonContent = '<h4>Play Soundtrack</h4>'
+            onClick = () => {
+                this.soundtrack.play()
+                this.soundtrackPaused = false
+                this.updateAndRender()
+            }
+        } else {
+            soundtrackButtonContent = '<h4>Pause Soundtrack</h4>'
+            onClick = () => {
+                this.soundtrack.pause()
+                this.soundtrackPaused = true
+                this.updateAndRender()
+            }
+        }
+        soundtrackButton.innerHTML = soundtrackButtonContent
+        soundtrackButton.addEventListener('click', onClick)
+        parent.appendChild(soundtrackButton)
     }
     renderPlayerShipDeploymentButtons(){
         const parent = document.getElementById('ship_deployment_buttons')
@@ -501,6 +529,7 @@ class Game {
         return getRandomElementFromArray(cellsForShipPlacement)
     }
     updateAndRender() {
+        this.renderControlButtons()
         this.updateShipsStatus('playerBoard')
         this.updateShipsStatus('computerBoard')
         this.checkPlayerShipDeployment()
@@ -556,25 +585,25 @@ class Game {
         this.isComputerTurn = false
     }
     computerAttackCell(){
-        const idOfCellToAttack = this.getCellToAttack('playerBoard')
-        if (this['playerBoard'].cells[idOfCellToAttack].isShip) {
-            this.writeLog(`Computer`, 'I have hit a ship, I go again!')
-            this['playerBoard'].cells[idOfCellToAttack].isHit = true
-            const hitShipKey = Object.keys(this['playerBoard'].cells[idOfCellToAttack].contains)
-            this['playerBoard'].ships[hitShipKey].cells[this['playerBoard'].cells[idOfCellToAttack].id].isHit = true
-            this.computerTarget.use = true
-            this.computerTarget.cells.push(idOfCellToAttack)
-            this.updateAndRender()
-            this.updateComputerTarget()
-            if (this.state !== 'over') {
+        if (this.mode !== 'over') {
+            const idOfCellToAttack = this.getCellToAttack('playerBoard')
+            if (this['playerBoard'].cells[idOfCellToAttack].isShip) {
+                this.writeLog(`Computer`, 'I have hit a ship, I go again!')
+                this['playerBoard'].cells[idOfCellToAttack].isHit = true
+                const hitShipKey = Object.keys(this['playerBoard'].cells[idOfCellToAttack].contains)
+                this['playerBoard'].ships[hitShipKey].cells[this['playerBoard'].cells[idOfCellToAttack].id].isHit = true
+                this.computerTarget.use = true
+                this.computerTarget.cells.push(idOfCellToAttack)
+                this.updateAndRender()
+                this.updateComputerTarget()
                 this.computerAttackCell()
                 this.updateAndRender()
             }
-        }
-        if (this['playerBoard'].cells[idOfCellToAttack].isWater) {
-            this['playerBoard'].cells[idOfCellToAttack].isHit = true
-            this.writeLog(`Computer`, 'I have hit water, for now.')
-            this.updateAndRender()
+            if (this['playerBoard'].cells[idOfCellToAttack].isWater) {
+                this['playerBoard'].cells[idOfCellToAttack].isHit = true
+                this.writeLog(`Computer`, 'I have hit water, for now.')
+                this.updateAndRender()
+            }
         }
     }
     getAttackableCellsBroadly(whichBoard) {
@@ -622,14 +651,10 @@ class Game {
                 let currentGrid = this.convertIDToGrid(currentCellID)
                 currentGrid.col += patternElement.colDelta
                 currentGrid.row += patternElement.rowDelta
-                if (this.validateGrid(currentGrid.row, currentGrid.col)) {
-                    currentCellID = this.convertGridToID(currentGrid.row, currentGrid.col)
-                    if(!(currentCellID >= 0 && currentCellID <= 99)) {
-                        break
-                    }
-                } else {
+                currentCellID = this.convertGridToID(currentGrid.row, currentGrid.col)
+                if (! this.validateGrid(currentGrid.row, currentGrid.col)) {
                     break
-                }                
+                }               
             }
         })
         return freeSpace
@@ -727,7 +752,6 @@ class Game {
 // Main Game Controller
 
 const g = new Game(10, 40)
-g.renderControlButtons()
 g.initBoard('playerBoard', false)
 g.initShips('playerBoard')
 g.initBoard('computerBoard', true)
