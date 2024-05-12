@@ -120,11 +120,13 @@ class Game {
         }
         this.playerBoard = {
             parent: document.getElementById('player_board'),
+            displayName: 'Player Board',
             cells: {},
             ships: {}
         }
         this.computerBoard = {
             parent: document.getElementById('computer_board'),
+            displayName: 'ComputerBoard',
             cells: {},
             ships: {}
         }
@@ -277,7 +279,7 @@ class Game {
                 } 
             }
             if (intactCellsInShip === 0) {
-                this.writeLog('System', `The ${ship} on ${whichBoard} is sunk`)
+                this.writeLog('System', `The ${ship} on ${this[whichBoard].displayName} is sunk`)
                 this.checkVictory()
                 this[whichBoard].ships[ship].isSunk = true
                 for (let cell in this[whichBoard].ships[ship].cells) {
@@ -556,25 +558,25 @@ class Game {
         this.isComputerTurn = false
     }
     computerAttackCell(){
-        const idOfCellToAttack = this.getCellToAttack('playerBoard')
-        if (this['playerBoard'].cells[idOfCellToAttack].isShip) {
-            this.writeLog(`Computer`, 'I have hit a ship, I go again!')
-            this['playerBoard'].cells[idOfCellToAttack].isHit = true
-            const hitShipKey = Object.keys(this['playerBoard'].cells[idOfCellToAttack].contains)
-            this['playerBoard'].ships[hitShipKey].cells[this['playerBoard'].cells[idOfCellToAttack].id].isHit = true
-            this.computerTarget.use = true
-            this.computerTarget.cells.push(idOfCellToAttack)
-            this.updateAndRender()
-            this.updateComputerTarget()
-            if (this.state !== 'over') {
+        if (this.mode !== 'over') {
+            const idOfCellToAttack = this.getCellToAttack('playerBoard')
+            if (this['playerBoard'].cells[idOfCellToAttack].isShip) {
+                this.writeLog(`Computer`, 'I have hit a ship, I go again!')
+                this['playerBoard'].cells[idOfCellToAttack].isHit = true
+                const hitShipKey = Object.keys(this['playerBoard'].cells[idOfCellToAttack].contains)
+                this['playerBoard'].ships[hitShipKey].cells[this['playerBoard'].cells[idOfCellToAttack].id].isHit = true
+                this.computerTarget.use = true
+                this.computerTarget.cells.push(idOfCellToAttack)
+                this.updateAndRender()
+                this.updateComputerTarget()
                 this.computerAttackCell()
                 this.updateAndRender()
             }
-        }
-        if (this['playerBoard'].cells[idOfCellToAttack].isWater) {
-            this['playerBoard'].cells[idOfCellToAttack].isHit = true
-            this.writeLog(`Computer`, 'I have hit water, for now.')
-            this.updateAndRender()
+            if (this['playerBoard'].cells[idOfCellToAttack].isWater) {
+                this['playerBoard'].cells[idOfCellToAttack].isHit = true
+                this.writeLog(`Computer`, 'I have hit water, for now.')
+                this.updateAndRender()
+            }
         }
     }
     getAttackableCellsBroadly(whichBoard) {
@@ -622,14 +624,10 @@ class Game {
                 let currentGrid = this.convertIDToGrid(currentCellID)
                 currentGrid.col += patternElement.colDelta
                 currentGrid.row += patternElement.rowDelta
-                if (this.validateGrid(currentGrid.row, currentGrid.col)) {
-                    currentCellID = this.convertGridToID(currentGrid.row, currentGrid.col)
-                    if(!(currentCellID >= 0 && currentCellID <= 99)) {
-                        break
-                    }
-                } else {
+                currentCellID = this.convertGridToID(currentGrid.row, currentGrid.col)
+                if (! this.validateGrid(currentGrid.row, currentGrid.col)) {
                     break
-                }                
+                }               
             }
         })
         return freeSpace
