@@ -149,13 +149,13 @@ class Game {
         this.log.parent.innerHTML = ''
         this.log.entries.forEach(entry => {
             const entryElement = document.createElement('p')
-            const sourceElemenet = document.createElement('span')
-            sourceElemenet.style.fontWeight = 'bolder'
-            sourceElemenet.innerHTML = `${entry.source}: `
-            const messageElemenet = document.createElement('span')
-            messageElemenet.innerHTML = `${entry.message}`
-            entryElement.appendChild(sourceElemenet)
-            entryElement.appendChild(messageElemenet)
+            const sourceElement = document.createElement('span')
+            sourceElement.style.fontWeight = 'bolder'
+            sourceElement.innerHTML = `${entry.source}: `
+            const messageElement = document.createElement('span')
+            messageElement.innerHTML = `${entry.message}`
+            entryElement.appendChild(sourceElement)
+            entryElement.appendChild(messageElement)
             this.log.parent.prepend(entryElement)
         })
     }
@@ -263,8 +263,8 @@ class Game {
             destroyer: {size: 2, cells: {}, isSunk: false, isPlaced: false},
         }
         for (let ship in ships) {
-            let initedShip = ships[ship]
-            this[whichBoard].ships[ship] = initedShip
+            let initiatedShip = ships[ship]
+            this[whichBoard].ships[ship] = initiatedShip
         }
     }
     updateShipsStatus(whichBoard) {
@@ -701,10 +701,10 @@ class Game {
     getAttackableCellsUsingPattern(whichBoard, pattern){
         const attackableCells = []
         this.computerTarget.cells.forEach(cellInTarget => {
-            pattern.forEach(searchPatternElemenet => {
+            pattern.forEach(searchPatternElement => {
                 const grid = this.convertIDToGrid(cellInTarget)
-                const rowToValidate = grid.row + searchPatternElemenet.rowDelta
-                const colToValidate = grid.col + searchPatternElemenet.colDelta
+                const rowToValidate = grid.row + searchPatternElement.rowDelta
+                const colToValidate = grid.col + searchPatternElement.colDelta
                 if (this.validateGrid(rowToValidate, colToValidate)) {
                     const idToTest = this.convertGridToID(rowToValidate, colToValidate)
                     if (!this[whichBoard].cells[idToTest].isHit){
