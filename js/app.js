@@ -126,7 +126,7 @@ class Game {
         }
         this.computerBoard = {
             parent: document.getElementById('computer_board'),
-            displayName: 'ComputerBoard',
+            displayName: 'Computer Board',
             cells: {},
             ships: {}
         }
@@ -134,6 +134,8 @@ class Game {
             parent: document.getElementById('log'),
             entries: []
         }
+        this.soundtrack = new Audio('media/girlsUndPanzerOST.mp3')
+        this.soundtrackPaused = true 
     }
     writeLog(source, message) {
         this.log.entries.push(
@@ -353,12 +355,36 @@ class Game {
     }
     renderControlButtons(){
         const parent = document.getElementById('control_buttons')
+        parent.innerHTML = ''
+
         const resetButton = document.createElement('button')
         resetButton.innerHTML = '<h4>Reset Game</h4>'
         resetButton.addEventListener('click', () => {
             location.reload()
         })
         parent.appendChild(resetButton)
+
+        const soundtrackButton = document.createElement('button')
+        let onClick = ''
+        let soundtrackButtonContent = ''
+        if (this.soundtrackPaused) {
+            soundtrackButtonContent = '<h4>Play Soundtrack</h4>'
+            onClick = () => {
+                this.soundtrack.play()
+                this.soundtrackPaused = false
+                this.updateAndRender()
+            }
+        } else {
+            soundtrackButtonContent = '<h4>Pause Soundtrack</h4>'
+            onClick = () => {
+                this.soundtrack.pause()
+                this.soundtrackPaused = true
+                this.updateAndRender()
+            }
+        }
+        soundtrackButton.innerHTML = soundtrackButtonContent
+        soundtrackButton.addEventListener('click', onClick)
+        parent.appendChild(soundtrackButton)
     }
     renderPlayerShipDeploymentButtons(){
         const parent = document.getElementById('ship_deployment_buttons')
@@ -503,6 +529,7 @@ class Game {
         return getRandomElementFromArray(cellsForShipPlacement)
     }
     updateAndRender() {
+        this.renderControlButtons()
         this.updateShipsStatus('playerBoard')
         this.updateShipsStatus('computerBoard')
         this.checkPlayerShipDeployment()
@@ -725,7 +752,6 @@ class Game {
 // Main Game Controller
 
 const g = new Game(10, 40)
-g.renderControlButtons()
 g.initBoard('playerBoard', false)
 g.initShips('playerBoard')
 g.initBoard('computerBoard', true)
