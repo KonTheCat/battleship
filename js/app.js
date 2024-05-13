@@ -768,12 +768,14 @@ class Game {
                 this.mode = 'over'
                 this.writeLog('System', 'Computer wins!')
                 this.score.computer ++
+                this.demo()
             }
             if (this.checkAllShipsStatus('computerBoard', 'isSunk')) {
                 this.playerWon = true
                 this.mode = 'over'
                 this.writeLog('System', 'Player wins!')
                 this.score.player ++
+                this.demo()
             }
         }
     }
