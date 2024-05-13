@@ -13,11 +13,27 @@
         <div id="header">
             <h1>KonTheCat's Glorious Battleship</h1>
         </div>
-        <div id="control_buttons"></div>
-        <div id="ship_deployment_buttons">
-            <h4>Player Ship Deployment</h4>
+        <div id="control_buttons_container">
+            <h4>Control Buttons</h4>
+            <div id="control_buttons"></div>
         </div>
-        <div id="game_status"></div>
+        <div id="scoreboard_container">
+            <h4>Scoreboard</h4>
+            <table>
+                <tr>
+                    <th>Computer</th>
+                    <th>Player</th>
+                </tr>
+                <tr>
+                    <td><span id="computer_score"></span></td>
+                    <td><span id="player_score"></span></td>
+                </tr>
+            </table>
+        </div>
+        <div id="ship_deployment_container">
+            <h4>Player Ship Deployment</h4>
+            <div id="ship_deployment_buttons"></div>
+        </div>
         <div id="player_board_container">
             <h4>Player Board</h4>
             <div id="player_board"></div>
@@ -26,7 +42,7 @@
             <h4>Computer Board</h4>
             <div id="computer_board"></div>
         </div>
-        <div id="log_container" style="display: none;">
+        <div id="log_container">
             <h4>Gameplay Log</h4>
             <div id="log"></div>
         </div>

@@ -104,6 +104,12 @@ class Game {
         this.cellSize = cellSize
         this.mode = ''
         this.playerWon
+        this.score = {
+            computerScoreSpan: document.getElementById('computer_score'),
+            playerScoreSpan: document.getElementById('player_score'),
+            player: 0,
+            computer: 0
+        }
         this.isComputerTurn = false
         this.computerTarget = {
             use: false,
@@ -131,11 +137,37 @@ class Game {
             ships: {}
         }
         this.log = {
+            container: document.getElementById('log_container'),
             parent: document.getElementById('log'),
+            isDisplayed: false,
             entries: []
         }
-        this.soundtrack = new Audio('media/girlsUndPanzerOST.mp3')
-        this.soundtrackPaused = true 
+        this.soundtrack = {
+            media: new Audio('media/girlsUndPanzerOST.mp3'),
+            isPaused: true
+        }
+        this.deploymentButtons = {
+            parent: document.getElementById('ship_deployment_buttons'),
+            container: document.getElementById('ship_deployment_container'),
+            isDisplayed: true
+        }
+    }
+    resetGame(){
+        this.mode = ''
+        this.waitDeploymentDone = true
+        this.shipToPlace.board = ''
+        this.shipToPlace.orientation = ''
+        this.shipToPlace.type = ''
+        this.playerWon = null
+        this.initBoard('playerBoard', false)
+        this.initShips('playerBoard')
+        this.initBoard('computerBoard', true)
+        this.initShips('computerBoard')
+        this.placeShipsRandomly('computerBoard')
+        this.log.entries = []
+        this.log.isDisplayed = false
+        this.deploymentButtons.isDisplayed = true
+        this.updateAndRender()
     }
     writeLog(source, message) {
         this.log.entries.push(
@@ -145,17 +177,24 @@ class Game {
             }
         )
     }
+    renderLogContainer() {
+        if (this.log.isDisplayed) {
+            this.log.container.style.display = 'block'
+        } else {
+            this.log.container.style.display = 'none'
+        }
+    }
     renderLog() {
         this.log.parent.innerHTML = ''
         this.log.entries.forEach(entry => {
             const entryElement = document.createElement('p')
-            const sourceElemenet = document.createElement('span')
-            sourceElemenet.style.fontWeight = 'bolder'
-            sourceElemenet.innerHTML = `${entry.source}: `
-            const messageElemenet = document.createElement('span')
-            messageElemenet.innerHTML = `${entry.message}`
-            entryElement.appendChild(sourceElemenet)
-            entryElement.appendChild(messageElemenet)
+            const sourceElement = document.createElement('span')
+            sourceElement.style.fontWeight = 'bolder'
+            sourceElement.innerHTML = `${entry.source}: `
+            const messageElement = document.createElement('span')
+            messageElement.innerHTML = `${entry.message}`
+            entryElement.appendChild(sourceElement)
+            entryElement.appendChild(messageElement)
             this.log.parent.prepend(entryElement)
         })
     }
@@ -263,8 +302,8 @@ class Game {
             destroyer: {size: 2, cells: {}, isSunk: false, isPlaced: false},
         }
         for (let ship in ships) {
-            let initedShip = ships[ship]
-            this[whichBoard].ships[ship] = initedShip
+            let initiatedShip = ships[ship]
+            this[whichBoard].ships[ship] = initiatedShip
         }
     }
     updateShipsStatus(whichBoard) {
@@ -360,25 +399,27 @@ class Game {
         const resetButton = document.createElement('button')
         resetButton.innerHTML = '<h4>Reset Game</h4>'
         resetButton.addEventListener('click', () => {
-            location.reload()
+            this.resetGame()
         })
         parent.appendChild(resetButton)
 
         const soundtrackButton = document.createElement('button')
         let onClick = ''
         let soundtrackButtonContent = ''
-        if (this.soundtrackPaused) {
+        if (this.soundtrack.isPaused) {
             soundtrackButtonContent = '<h4>Play Soundtrack</h4>'
             onClick = () => {
-                this.soundtrack.play()
-                this.soundtrackPaused = false
+                this.soundtrack.media.play()
+                this.soundtrack.media.volume = 0.50
+                this.soundtrack.media.loop = true
+                this.soundtrack.isPaused = false
                 this.updateAndRender()
             }
         } else {
             soundtrackButtonContent = '<h4>Pause Soundtrack</h4>'
             onClick = () => {
-                this.soundtrack.pause()
-                this.soundtrackPaused = true
+                this.soundtrack.media.pause()
+                this.soundtrack.isPaused = true
                 this.updateAndRender()
             }
         }
@@ -386,8 +427,15 @@ class Game {
         soundtrackButton.addEventListener('click', onClick)
         parent.appendChild(soundtrackButton)
     }
+    renderPlayerShipDeploymentButtonsContainer() {
+        if (this.deploymentButtons.isDisplayed) {
+            this.deploymentButtons.container.style.display = 'block'
+        } else {
+            this.deploymentButtons.container.style.display = 'none'
+        }
+    }
     renderPlayerShipDeploymentButtons(){
-        const parent = document.getElementById('ship_deployment_buttons')
+        this.deploymentButtons.parent.innerHTML = ''
         const randomPlayerShipDeploymentButton = document.createElement('button')
         randomPlayerShipDeploymentButton.innerHTML = `Place My Ships Randomly`
         randomPlayerShipDeploymentButton.classList.add(`deploy_randomly`)
@@ -400,7 +448,7 @@ class Game {
                 button.disabled = true
             })
         })
-        parent.appendChild(randomPlayerShipDeploymentButton)
+        this.deploymentButtons.parent.appendChild(randomPlayerShipDeploymentButton)
         
         const orientations = [
             {
@@ -425,7 +473,7 @@ class Game {
                     this.shipToPlace.orientation = orientation.code
                     this.updateAndRender()
                 })
-                parent.appendChild(newButton)
+                this.deploymentButtons.parent.appendChild(newButton)
             })
         }
     }
@@ -456,7 +504,6 @@ class Game {
             }
         }
     }
-    
     validateAddShip(whichBoard, startingCellID, size, downOrRight) {
         let currentCellID = Number(startingCellID)
         const cellsRightCheckSameRow = []
@@ -530,22 +577,21 @@ class Game {
     }
     updateAndRender() {
         this.renderControlButtons()
+        this.renderPlayerShipDeploymentButtonsContainer()
+        this.renderPlayerShipDeploymentButtons()
         this.updateShipsStatus('playerBoard')
         this.updateShipsStatus('computerBoard')
         this.checkPlayerShipDeployment()
         this.checkVictory()
         this.renderBoard('playerBoard')
         this.renderBoard('computerBoard')
-        this.renderUI()
+        this.renderLogContainer()
         this.renderLog()
+        this.renderScore()
     }
-    renderUI() {
-        const gameStatus = document.getElementById('game_status')
-        if (this.playerWon === true) {
-            gameStatus.innerHTML = 'You won!'
-        } else if (this.playerWon === false){
-            gameStatus.innerHTML = 'You lost!'
-        }
+    renderScore() {
+        this.score.computerScoreSpan.innerHTML = this.score.computer
+        this.score.playerScoreSpan.innerHTML = this.score.player
     }
     checkPlayerShipDeployment(){
         if (this.checkAllShipsStatus('playerBoard', 'isPlaced') && this.waitDeploymentDone) {
@@ -553,8 +599,8 @@ class Game {
             document.querySelectorAll(`button.deploy`).forEach(button => {
                 button.disabled = true
             })
-            document.getElementById('ship_deployment_buttons').style.display = "none"
-            document.getElementById('log_container').style.display = "block"
+            this.deploymentButtons.isDisplayed = false
+            this.log.isDisplayed = true
             this.mode = 'attack'
             this.waitDeploymentDone = false
             this.updateAndRender()
@@ -701,10 +747,10 @@ class Game {
     getAttackableCellsUsingPattern(whichBoard, pattern){
         const attackableCells = []
         this.computerTarget.cells.forEach(cellInTarget => {
-            pattern.forEach(searchPatternElemenet => {
+            pattern.forEach(searchPatternElement => {
                 const grid = this.convertIDToGrid(cellInTarget)
-                const rowToValidate = grid.row + searchPatternElemenet.rowDelta
-                const colToValidate = grid.col + searchPatternElemenet.colDelta
+                const rowToValidate = grid.row + searchPatternElement.rowDelta
+                const colToValidate = grid.col + searchPatternElement.colDelta
                 if (this.validateGrid(rowToValidate, colToValidate)) {
                     const idToTest = this.convertGridToID(rowToValidate, colToValidate)
                     if (!this[whichBoard].cells[idToTest].isHit){
@@ -721,11 +767,15 @@ class Game {
                 this.playerWon = false
                 this.mode = 'over'
                 this.writeLog('System', 'Computer wins!')
+                this.score.computer ++
+                this.demo()
             }
             if (this.checkAllShipsStatus('computerBoard', 'isSunk')) {
                 this.playerWon = true
                 this.mode = 'over'
                 this.writeLog('System', 'Player wins!')
+                this.score.player ++
+                this.demo()
             }
         }
     }
@@ -756,7 +806,6 @@ g.initBoard('playerBoard', false)
 g.initShips('playerBoard')
 g.initBoard('computerBoard', true)
 g.initShips('computerBoard')
-g.renderPlayerShipDeploymentButtons()
 g.placeShipsRandomly('computerBoard')
 
 // End of Main Game Controller

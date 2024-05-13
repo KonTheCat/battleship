@@ -11,7 +11,7 @@ body {
     display: grid;
     grid-template-areas: 
     "head head head"
-    "controls none game_status"
+    "controls none scoreboard"
     "playerBoard ship_buttons log"
     "computerBoard ship_buttons log";
     grid-template-columns: fit-content(10%) .2fr;
@@ -23,6 +23,10 @@ body {
     border: 8px double black;
 } 
 
+#scoreboard_container {
+    grid-area: scoreboard;
+}
+
 #ui > * {
     margin-left: 20px;
     margin-right: 20px;
@@ -32,16 +36,12 @@ body {
     grid-area: head;
 }
 
-#control_buttons {
+#control_buttons_container {
     grid-area: controls;
 }
 
-#ship_deployment_buttons {
+#ship_deployment_container {
     grid-area: ship_buttons;
-}
-
-#game_status{
-    grid-area: game_status;
 }
 
 #player_board_container {
