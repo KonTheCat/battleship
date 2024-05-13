@@ -11,7 +11,7 @@ body {
     display: grid;
     grid-template-areas: 
     "head head head"
-    "controls none none"
+    "controls none scoreboard"
     "playerBoard ship_buttons log"
     "computerBoard ship_buttons log";
     grid-template-columns: fit-content(10%) .2fr;
@@ -23,6 +23,10 @@ body {
     border: 8px double black;
 } 
 
+#scoreboard_container {
+    grid-area: scoreboard;
+}
+
 #ui > * {
     margin-left: 20px;
     margin-right: 20px;
@@ -32,7 +36,7 @@ body {
     grid-area: head;
 }
 
-#control_buttons {
+#control_buttons_container {
     grid-area: controls;
 }
 

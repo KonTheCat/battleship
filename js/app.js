@@ -104,6 +104,12 @@ class Game {
         this.cellSize = cellSize
         this.mode = ''
         this.playerWon
+        this.score = {
+            computerScoreSpan: document.getElementById('computer_score'),
+            playerScoreSpan: document.getElementById('player_score'),
+            player: 0,
+            computer: 0
+        }
         this.isComputerTurn = false
         this.computerTarget = {
             use: false,
@@ -581,6 +587,11 @@ class Game {
         this.renderBoard('computerBoard')
         this.renderLogContainer()
         this.renderLog()
+        this.renderScore()
+    }
+    renderScore() {
+        this.score.computerScoreSpan.innerHTML = this.score.computer
+        this.score.playerScoreSpan.innerHTML = this.score.player
     }
     checkPlayerShipDeployment(){
         if (this.checkAllShipsStatus('playerBoard', 'isPlaced') && this.waitDeploymentDone) {
@@ -756,11 +767,13 @@ class Game {
                 this.playerWon = false
                 this.mode = 'over'
                 this.writeLog('System', 'Computer wins!')
+                this.score.computer ++
             }
             if (this.checkAllShipsStatus('computerBoard', 'isSunk')) {
                 this.playerWon = true
                 this.mode = 'over'
                 this.writeLog('System', 'Player wins!')
+                this.score.player ++
             }
         }
     }
