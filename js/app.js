@@ -768,14 +768,14 @@ class Game {
                 this.mode = 'over'
                 this.writeLog('System', 'Computer wins!')
                 this.score.computer ++
-                this.demo()
+                this.unhideBoard('computerBoard')
             }
             if (this.checkAllShipsStatus('computerBoard', 'isSunk')) {
                 this.playerWon = true
                 this.mode = 'over'
                 this.writeLog('System', 'Player wins!')
                 this.score.player ++
-                this.demo()
+                this.unhideBoard('computerBoard')
             }
         }
     }
@@ -793,9 +793,6 @@ class Game {
             this[whichBoard].cells[cell].isHidden = false
         }
         this.updateAndRender()
-    }
-    demo() {
-        this.unhideBoard('computerBoard')
     }
 }
 
