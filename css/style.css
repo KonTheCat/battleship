@@ -11,7 +11,7 @@ body {
     display: grid;
     grid-template-areas: 
     "head head head"
-    "controls none game_status"
+    "controls none none"
     "playerBoard ship_buttons log"
     "computerBoard ship_buttons log";
     grid-template-columns: fit-content(10%) .2fr;
@@ -36,12 +36,8 @@ body {
     grid-area: controls;
 }
 
-#ship_deployment_buttons {
+#ship_deployment_container {
     grid-area: ship_buttons;
-}
-
-#game_status{
-    grid-area: game_status;
 }
 
 #player_board_container {
