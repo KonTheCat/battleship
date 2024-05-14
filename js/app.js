@@ -96,7 +96,7 @@ const freeSpaceDetectionPattern = [
 const colorOfWater = 'rgba(77, 93, 240, 0.6)'
 const colorOfHidden = 'rgba(255,255,255, 0.6)'
 const colorOfShip = 'rgba(0, 0, 0, 0.6)'
-const colorOfDeployment = 'rgba(0.5, 0.5, 0.5, 0.6)'
+const colorOfDeployment = 'rgba(128, 128, 128, 0.6)'
 
 class Game {
     constructor(boardSideSize, cellSize) {
@@ -234,6 +234,7 @@ class Game {
                 },
                 deployment: () => {
                     this.addShip(this.shipToPlace.board, this[whichBoard].cells[i].id, this.shipToPlace.type, this.shipToPlace.orientation)
+                    this.mode = 'none'
                     this.updateAndRender()
                 },
                 deploymentMouseEnter: () => {
