@@ -151,6 +151,28 @@ class Game {
             container: document.getElementById('ship_deployment_container'),
             isDisplayed: true
         }
+        this.difficulty = {
+            isEasy: false,
+            isMedium: true,
+            isHard: false,
+            isCheating: false
+        }
+    }
+    setDifficulty(isDifficulty){
+        for (let diff in this.difficulty) {
+            if (diff === isDifficulty) {
+                this.difficulty[diff] = true
+            } else {
+                this.difficulty[diff] = false
+            }
+        }
+    }
+    getDifficulty(){
+        for (let diff in this.difficulty) {
+            if (this.difficulty[diff] === true) {
+                return diff
+            }
+        }
     }
     resetGame(){
         this.mode = ''
@@ -427,6 +449,47 @@ class Game {
         soundtrackButton.innerHTML = soundtrackButtonContent
         soundtrackButton.addEventListener('click', onClick)
         parent.appendChild(soundtrackButton)
+
+        const settingsButton = document.createElement('button')
+        settingsButton.innerHTML = '<h4>Settings</h4>'
+        settingsButton.addEventListener('click', () => {
+            const settingsContainer = document.getElementById('settings_container')
+            if (settingsContainer.style.display === 'block') {
+                settingsContainer.style.display = 'none' 
+            } else {
+                settingsContainer.style.display = 'block'
+                this.renderSettingsButtons()
+            }
+        })
+        parent.appendChild(settingsButton)
+    }
+    renderSettingsButtons() {
+        const parent = document.getElementById('close_settings_button')
+        parent.innerHTML = ''
+        const closeSettingsButton = document.createElement('button')
+        closeSettingsButton.innerHTML = 'Close'
+        closeSettingsButton.addEventListener('click', () => {
+            document.getElementById('settings_container').style.display = 'none'
+        })
+        parent.appendChild(closeSettingsButton)
+
+        this.renderDifficultySettingsButtons()
+    }
+    renderDifficultySettingsButtons() {
+        const parent = document.getElementById('difficulty_buttons')
+        parent.innerHTML = ''
+        for (let setting in this.difficulty) {
+            const button = document.createElement('button')
+            button.innerHTML = `${setting.slice(2)}`
+            button.addEventListener('click', () => {
+                this.setDifficulty(setting)
+                this.renderDifficultySettingsButtons()
+            })
+            if (this.getDifficulty() === setting) {
+                button.disabled = true
+            }
+            parent.appendChild(button)
+        }
     }
     renderPlayerShipDeploymentButtonsContainer() {
         if (this.deploymentButtons.isDisplayed) {
@@ -670,7 +733,7 @@ class Game {
         const arrayOfGoodTargetCells = arrayOfProspectiveGoodTargetCells.filter(n => n)
         return arrayOfGoodTargetCells
     }
-    getBetterTargetCell(whichBoard) {
+    getBetterTargetCells(whichBoard) {
         const arrayOfGoodTargetCells = this.getGoodTargetCells(whichBoard)
         const arrayOfCellsWithFreeSpace = []
         arrayOfGoodTargetCells.forEach(cellElemenet => {
@@ -686,6 +749,15 @@ class Game {
             arrayOfBetterTargetCells.push(element.id)
         })
         return arrayOfBetterTargetCells
+    }
+    getTargetCellsWithCheating(whichBoard) {
+        const arrayOfTargetCellsWithCheating = this.getBetterTargetCells(whichBoard)
+        for (let cell in this[whichBoard].cells) {
+            if(this[whichBoard].cells[cell].isShip && !this[whichBoard].cells[cell].isHit) {
+                arrayOfTargetCellsWithCheating.push(cell)
+            }
+        }
+        return arrayOfTargetCellsWithCheating
     }
     getCellFreeSpaceUsingGrid(whichBoard, id) {
         let freeSpace = 0
@@ -736,12 +808,28 @@ class Game {
                 arrayOfAttackableCells = this.getAttackableCellsUsingPattern(whichBoard, searchPatternGridHorizontal)
             }
             if (arrayOfAttackableCells.length === 0) {
-                arrayOfAttackableCells = this.getBetterTargetCell('playerBoard')
+                arrayOfAttackableCells = this.getTargetCellWithDifficulty('playerBoard')
             }
         } else {
-            arrayOfAttackableCells = this.getBetterTargetCell('playerBoard')
+            arrayOfAttackableCells = this.getTargetCellWithDifficulty('playerBoard')
         }
         return getRandomElementFromArray(arrayOfAttackableCells)
+    }
+    getTargetCellWithDifficulty(whichBoard) {
+        let arrayOfCellsToAttack = []
+        if (this.difficulty.isEasy) {
+            arrayOfCellsToAttack = this.getAttackableCellsBroadly(whichBoard)
+        }
+        if (this.difficulty.isMedium) {
+            arrayOfCellsToAttack = this.getGoodTargetCells(whichBoard)
+        }
+        if (this.difficulty.isHard) {
+            arrayOfCellsToAttack = this.getBetterTargetCells(whichBoard)
+        }
+        if (this.difficulty.isCheating) {
+            arrayOfCellsToAttack = this.getTargetCellsWithCheating(whichBoard)
+        }
+        return arrayOfCellsToAttack
     }
     getAttackableCellsUsingPattern(whichBoard, pattern){
         const attackableCells = []
@@ -797,7 +885,7 @@ class Game {
 
 // Main Game Controller
 
-const g = new Game(10, 40)
+const g = new Game(10, 30)
 g.initBoard('playerBoard', false)
 g.initShips('playerBoard')
 g.initBoard('computerBoard', true)
