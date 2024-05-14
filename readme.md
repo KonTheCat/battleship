@@ -12,7 +12,7 @@ Play the game here: [KonTheCat's Battleship](https://battleship.konthecat.com/)
 
 # Notes about difficulty and "AI"
 
-The following difficulties exist, they are cumulative, so each higher difficulty includes all of the elements of the previous difficulties. On all difficulty levels the computer player recognizes when it hits a ship and prioritizes it's destruction. 
+The following difficulties exist (accessible via Settings), they are cumulative, so each higher difficulty includes all of the elements of the previous difficulties. On all difficulty levels the computer player recognizes when it hits a ship and prioritizes it's destruction. 
 
 1. Easy - Computer shoots randomly, including at cells that due to deployment rules could not have a ship.
 2. Medium - Computer player takes into account cells that could not have a ship due to deployment rules.
