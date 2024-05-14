@@ -256,7 +256,6 @@ class Game {
                 },
                 deployment: () => {
                     this.addShip(this.shipToPlace.board, this[whichBoard].cells[i].id, this.shipToPlace.type, this.shipToPlace.orientation)
-                    this.mode = 'none'
                     this.updateAndRender()
                 },
                 deploymentMouseEnter: () => {
@@ -562,6 +561,7 @@ class Game {
                 }
                 this[whichBoard].ships[type].isPlaced = true
                 this[whichBoard].ships[type].downOrRight = downOrRight
+                this.mode = 'none'
                 this.updateAndRender()
             }
         }
