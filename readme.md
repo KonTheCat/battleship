@@ -21,11 +21,11 @@ The following difficulties exist, they are cumulative, so each higher difficulty
 
 # Screenshots
 
-## Ship deployment
+### Ship deployment
 
 ![ship deployment](media/initialScreen.png)
 
-## Gameplay
+### Gameplay
 
 ![gameplay](media/gameplayScreen.png)
 
