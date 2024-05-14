@@ -5,6 +5,8 @@ body {
     background-color: black;
     background-size: contain;
     background-repeat: no-repeat;
+    max-width: 1095px;
+    max-height: 1095px;
 }
 
 #ui {
@@ -18,8 +20,8 @@ body {
     grid-template-rows: auto;
     background-color: rgba(128, 0, 128, 0.6);
     color: beige;
-    max-width: fit-content;
-    max-height: fit-content;
+    max-width: 90%;
+    max-height: 90%;
     border: 8px double black;
 } 
 
