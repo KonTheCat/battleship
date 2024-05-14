@@ -295,11 +295,11 @@ class Game {
     }
     initShips(whichBoard){
         const ships = {
-            carrier: {size: 5, cells: {}, isSunk: false, isPlaced: false},
-            battleship: {size: 4, cells: {}, isSunk: false, isPlaced: false},
-            submarine: {size: 3, cells: {}, isSunk: false, isPlaced: false},
-            cruiser: {size: 3, cells: {}, isSunk: false, isPlaced: false},
-            destroyer: {size: 2, cells: {}, isSunk: false, isPlaced: false},
+            carrier: {size: 5, cells: {}, isSunk: false, isPlaced: false, downOrRight: ''},
+            battleship: {size: 4, cells: {}, isSunk: false, isPlaced: false, downOrRight: ''},
+            submarine: {size: 3, cells: {}, isSunk: false, isPlaced: false, downOrRight: ''},
+            cruiser: {size: 3, cells: {}, isSunk: false, isPlaced: false, downOrRight: ''},
+            destroyer: {size: 2, cells: {}, isSunk: false, isPlaced: false, downOrRight: ''},
         }
         for (let ship in ships) {
             let initiatedShip = ships[ship]
@@ -473,6 +473,9 @@ class Game {
                     this.shipToPlace.orientation = orientation.code
                     this.updateAndRender()
                 })
+                if (this['playerBoard'].ships[ship].isPlaced) {
+                    newButton.disabled = true
+                }
                 this.deploymentButtons.parent.appendChild(newButton)
             })
         }
@@ -494,12 +497,7 @@ class Game {
                     }
                 }
                 this[whichBoard].ships[type].isPlaced = true
-                if (whichBoard === 'playerBoard') {
-                    document.querySelectorAll(`button.deploy_${type}`).forEach(button => {
-                        button.disabled = true
-                    })
-                    this.mode = 'null'
-                }
+                this[whichBoard].ships[type].downOrRight = downOrRight
                 this.updateAndRender()
             }
         }
@@ -525,7 +523,7 @@ class Game {
         return true
     }
     validateCellForShipPlacement(whichBoard, cellID) {
-        if (cellID >= 0 && cellID <= 99 && this[whichBoard].cells[cellID].isWater && !this[whichBoard].cells[cellID].isShip) {
+        if (cellID >= 0 && cellID <= 99 && this[whichBoard].cells[cellID].isWater) {
             const nearbyCellsValidationArray = []
             for (let i = 0; i < validationPatternGridBox.length; i++) {
                 const grid = this.convertIDToGrid(cellID)
@@ -547,7 +545,7 @@ class Game {
             return true
         } else {
             const id = this.convertGridToID(row, col)
-            if (this[whichBoard].cells[id].isWater && !this[whichBoard].cells[id].isShip) {
+            if (this[whichBoard].cells[id].isWater) {
                 return true
             } else {
                 return false
@@ -768,14 +766,14 @@ class Game {
                 this.mode = 'over'
                 this.writeLog('System', 'Computer wins!')
                 this.score.computer ++
-                this.demo()
+                this.unhideBoard('computerBoard')
             }
             if (this.checkAllShipsStatus('computerBoard', 'isSunk')) {
                 this.playerWon = true
                 this.mode = 'over'
                 this.writeLog('System', 'Player wins!')
                 this.score.player ++
-                this.demo()
+                this.unhideBoard('computerBoard')
             }
         }
     }
@@ -793,9 +791,6 @@ class Game {
             this[whichBoard].cells[cell].isHidden = false
         }
         this.updateAndRender()
-    }
-    demo() {
-        this.unhideBoard('computerBoard')
     }
 }
 
